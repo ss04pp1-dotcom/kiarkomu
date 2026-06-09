@@ -1,0 +1,46 @@
+import { Router, type IRouter } from "express";
+import healthRouter from "./health.js";
+import authRouter from "./auth.js";
+import categoriesRouter from "./categories.js";
+import brandsRouter from "./brands.js";
+import productsRouter from "./products.js";
+import cartRouter from "./cart.js";
+import addressesRouter from "./addresses.js";
+import ordersRouter from "./orders.js";
+import promotionsRouter from "./promotions.js";
+import reviewsRouter from "./reviews.js";
+import notificationsRouter from "./notifications.js";
+import shippingRouter from "./shipping.js";
+import messagesRouter from "./messages.js";
+import analyticsRouter from "./analytics.js";
+import settingsRouter from "./settings.js";
+import uploadRouter from "./upload.js";
+import wishlistRouter from "./wishlist.js";
+import seedRouter from "./seed.js";
+import appConfigRouter from "./app-config.js";
+import scheduledNotificationsRouter from "./scheduled-notifications.js";
+
+const router: IRouter = Router();
+
+router.use(healthRouter);
+router.use(authRouter);
+router.use(categoriesRouter);
+router.use(brandsRouter);
+router.use(productsRouter);
+router.use(cartRouter);
+router.use(addressesRouter);
+router.use(ordersRouter);
+router.use(promotionsRouter);
+router.use(reviewsRouter);
+router.use(notificationsRouter);
+router.use(shippingRouter);
+router.use(messagesRouter);
+router.use(analyticsRouter);
+router.use(settingsRouter);
+router.use(uploadRouter);
+router.use(wishlistRouter);
+router.use(seedRouter);
+router.use(appConfigRouter);
+router.use(scheduledNotificationsRouter);
+
+export default router;

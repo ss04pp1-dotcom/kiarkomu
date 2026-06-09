@@ -1,0 +1,53 @@
+modules = ["nodejs-24", "python-3.11", "postgresql-16"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 18115
+externalPort = 3001
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+CONFIG_ENCRYPTION_KEY = "cfd51ecd4c44f4514250fd6fa03f67ebd207c70f4a019879403c247c27096bcc"
+ADMIN_JWT_SECRET = "9894208b8edd85f4fefa0c26d27bde1de0b10ee58f4607814c8f884fcb40be87"
+JWT_SECRET = "619263e165d6d6d17f30ae51f3469bcfd6548fdaa535fd3b259dd9de71f0f04e"
+ADMIN_EMAIL = "admin@shohure.com"
+ADMIN_PASSWORD = "Admin1234!"
+VITE_API_URL = "https://shohure-api.onrender.com"

@@ -1,0 +1,9 @@
+name = "kiarkomuweb"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+RENDER_API_URL = "https://shohure-api.onrender.com"
+NEXT_PUBLIC_API_URL = "https://shohure-api.onrender.com"

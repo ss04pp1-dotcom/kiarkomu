@@ -1,0 +1,26 @@
+kind = "web"
+previewPath = "/"
+title = "Web Storefront"
+version = "1.0.0"
+id = "artifacts/web"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 3000
+
+[services.development]
+run = "pnpm --filter @workspace/web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/web", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/web", "run", "start" ]
+
+[services.env]
+PORT = "3000"
+BASE_PATH = "/"

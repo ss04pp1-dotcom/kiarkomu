@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "502867002834",
+    "project_id": "shohure-415b5",
+    "storage_bucket": "shohure-415b5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:502867002834:android:e3091fcf830b4de40c740b",
+        "android_client_info": {
+          "package_name": "com.shohure.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy2hdkXiMfscSybdcnhT3N7DIYCgTcZYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
