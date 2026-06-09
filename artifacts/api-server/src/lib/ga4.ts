@@ -193,6 +193,35 @@ export function fireGa4RemoveFromCart(p: Ga4CartItemParams): void {
   });
 }
 
+export interface Ga4SearchParams {
+  measurementId: string;
+  apiSecret: string;
+  userId?: number | null;
+  searchTerm: string;
+  resultCount?: number;
+  utmSource?: string | null;
+  clientIpHint?: string | null;
+}
+
+export function fireGa4Search(p: Ga4SearchParams): void {
+  const clientId = p.userId
+    ? deriveClientId(p.userId)
+    : p.clientIpHint
+      ? deriveClientId(`guest-ip-${p.clientIpHint}`)
+      : deriveClientId("guest-search");
+  fireGa4Event({
+    measurementId: p.measurementId,
+    apiSecret: p.apiSecret,
+    clientId,
+    eventName: "search",
+    utmSource: p.utmSource,
+    params: {
+      search_term: p.searchTerm,
+      ...(p.resultCount !== undefined ? { result_count: p.resultCount } : {}),
+    },
+  });
+}
+
 export interface Ga4BeginCheckoutParams {
   measurementId: string;
   apiSecret: string;

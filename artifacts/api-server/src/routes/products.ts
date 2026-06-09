@@ -7,7 +7,7 @@ import {
 import { eq, and, ilike, sql, inArray, gte, lte, asc, desc } from "drizzle-orm";
 import { requireAuth, requireRole, type AuthRequest } from "../middlewares/requireAuth.js";
 import { ordersTable, orderItemsTable, appSettingsTable } from "@workspace/db";
-import { fireGa4ViewItem } from "../lib/ga4.js";
+import { fireGa4ViewItem, fireGa4Search } from "../lib/ga4.js";
 
 const router = Router();
 
@@ -147,6 +147,28 @@ router.get("/products", async (req, res) => {
       products: products.map(p => formatProduct(p, catMap[p.categoryId], p.brandId ? brandMap[p.brandId] : null, reviewMap[p.id]?.avg, reviewMap[p.id]?.count)),
       total, page: pageNum, totalPages: Math.ceil(total / limitNum),
     });
+
+    // ── GA4 search — fire-and-forget, only when a search term was used ────────
+    if (search && pageNum === 1) {
+      const userId = (req as AuthRequest).userId ?? null;
+      const clientIpHint = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0].trim() ?? req.socket.remoteAddress ?? null;
+      const utmSource = (req.headers["x-utm-source"] as string | undefined) ?? null;
+      db.select({ googleTagId: appSettingsTable.googleTagId, gaApiSecret: appSettingsTable.gaApiSecret })
+        .from(appSettingsTable).limit(1)
+        .then(([s]) => {
+          if (!s?.googleTagId || !s?.gaApiSecret) return;
+          fireGa4Search({
+            measurementId: s.googleTagId,
+            apiSecret: s.gaApiSecret,
+            userId,
+            searchTerm: String(search),
+            resultCount: total,
+            clientIpHint,
+            utmSource,
+          });
+        })
+        .catch(() => {});
+    }
   } catch (err: any) {
     res.status(500).json({ error: "Failed to fetch products: " + err.message });
   }
