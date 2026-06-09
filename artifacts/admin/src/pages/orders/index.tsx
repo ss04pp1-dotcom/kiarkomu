@@ -17,8 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Search, X, Package, MapPin, Truck, User, Calendar,
-  ExternalLink, Clock, CheckCircle2, ChevronRight, Plus, ShieldAlert,
+  ExternalLink, Clock, CheckCircle2, ChevronRight, Plus, ShieldAlert, ShieldCheck, Loader2,
 } from "lucide-react";
+import { API_URL } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
 
 const PAY_METHOD_LABEL: Record<string, string> = {
@@ -91,6 +92,29 @@ function OrderDrawer({ orderId, onClose }: { orderId: number; onClose: () => voi
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [trackingNote, setTrackingNote] = useState("");
+  const [clearingFraud, setClearingFraud] = useState(false);
+
+  const handleClearFraud = async () => {
+    setClearingFraud(true);
+    try {
+      const token = localStorage.getItem("shohure_admin_token") ?? "";
+      const res = await fetch(`${API_URL}/api/orders/${orderId}/clear-fraud`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to clear fraud flag");
+      queryClient.setQueryData(getGetOrderQueryKey(orderId), (old: any) =>
+        old ? { ...old, fraudFlag: false } : old
+      );
+      queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+      toast({ title: "Order marked as safe", description: `Order #${orderId} fraud flag has been cleared.` });
+    } catch (err: any) {
+      toast({ title: err.message || "Failed to clear fraud flag", variant: "destructive" });
+    } finally {
+      setClearingFraud(false);
+    }
+  };
 
   const handleStatusChange = (newStatus: string) => {
     updateStatus.mutate(
@@ -186,6 +210,35 @@ function OrderDrawer({ orderId, onClose }: { orderId: number; onClose: () => voi
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Fraud flag alert */}
+            {(order as any).fraudFlag && (
+              <div className="px-6 py-4 bg-red-50 border-l-4 border-red-400">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <ShieldAlert className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-800">Fraud Flagged</p>
+                      <p className="text-xs text-red-600 mt-0.5 leading-snug">
+                        This order was automatically flagged by the fraud checker. Review the details before processing or fulfilling it.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-shrink-0 border-green-300 bg-white text-green-700 hover:bg-green-50 hover:border-green-400 hover:text-green-800 transition-colors"
+                    onClick={handleClearFraud}
+                    disabled={clearingFraud}
+                  >
+                    {clearingFraud
+                      ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      : <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />}
+                    {clearingFraud ? "Clearing…" : "Mark as Safe"}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Order items */}
             <div className="px-6 py-4">

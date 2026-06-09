@@ -554,6 +554,32 @@ router.get("/orders/:id", requireAuth, async (req: AuthRequest, res) => {
   });
 });
 
+// PATCH /orders/:id/clear-fraud — admin override to clear the fraud flag
+router.patch("/orders/:id/clear-fraud", requireAuth, requireRole("owner", "manager"), async (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
+
+  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id)).limit(1);
+  if (!order) { res.status(404).json({ error: "Order not found" }); return; }
+
+  const [updated] = await db
+    .update(ordersTable)
+    .set({ fraudFlag: false, updatedAt: new Date() })
+    .where(eq(ordersTable.id, id))
+    .returning();
+
+  if (!updated) { res.status(500).json({ error: "Failed to update order" }); return; }
+
+  const [user] = await db
+    .select({ name: usersTable.name })
+    .from(usersTable)
+    .where(eq(usersTable.id, updated.userId))
+    .limit(1);
+
+  req.log.info({ orderId: id, clearedBy: req.userId }, "Fraud flag cleared by admin");
+  res.json(fmtOrder(updated, user?.name ?? "Customer"));
+});
+
 // POST /orders/:id/cancel — customer self-service cancel (pending or confirmed only)
 router.post("/orders/:id/cancel", requireAuth, async (req: AuthRequest, res) => {
   const id = parseInt(req.params.id as string);
