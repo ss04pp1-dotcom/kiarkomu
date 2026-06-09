@@ -608,11 +608,13 @@ const form = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? 45 : 14, // Added padding to push the header down on Android
+    paddingBottom: 14, // Replaced paddingVertical with explicit bottom padding
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#EEEEEE",
   },
+  // ... rest of the code
   closeBtn: {
     width: 36,
     height: 36,
