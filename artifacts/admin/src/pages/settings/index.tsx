@@ -210,6 +210,7 @@ export default function Settings() {
   const [colorInput, setColorInput] = useState("#E91E63");
   const [payment, setPayment] = useState({ sslcommerzStoreId: "", sslcommerzStorePassword: "", sslcommerzSandbox: true });
   const [tracking, setTracking] = useState({ facebookPixelId: "", googleTagId: "" });
+  const [metaCapi, setMetaCapi] = useState({ metaAccessToken: "", metaTestEventCode: "" });
 
   type StorageProvider = "local" | "supabase" | "aws_s3";
   const CONFIG_JWT_KEY = "shohure_admin_config_jwt";
@@ -346,6 +347,10 @@ export default function Settings() {
     setTracking({
       facebookPixelId: (settings as any).facebookPixelId ?? "",
       googleTagId: (settings as any).googleTagId ?? "",
+    });
+    setMetaCapi({
+      metaAccessToken: "",
+      metaTestEventCode: (settings as any).metaTestEventCode ?? "",
     });
     setCourier({
       steadfastEnabled: settings.steadfastEnabled ?? false,
@@ -511,6 +516,70 @@ export default function Settings() {
           onClick={() => saveSection("tracking", {
             facebookPixelId: tracking.facebookPixelId.trim() || null,
             googleTagId: tracking.googleTagId.trim() || null,
+          })}
+        />
+      </div>
+
+      {/* ── Meta Conversions API (CAPI) ── */}
+      <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <KeyRound className="h-5 w-5 text-blue-600" />
+          <h3 className="text-base font-semibold text-gray-800">Meta Conversions API (CAPI)</h3>
+        </div>
+        <p className="text-sm text-gray-500 -mt-1">
+          Server-side Purchase event tracking sent directly from your server to Meta — bypasses ad blockers and iOS 14+ restrictions. Requires a Meta System User Access Token.
+        </p>
+
+        {/* Status indicator */}
+        <div className="flex items-center gap-2 p-3 rounded-lg border bg-gray-50">
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${(settings as any)?.metaCapiConfigured ? "bg-green-500" : "bg-gray-300"}`} />
+          <span className="text-sm text-gray-600">
+            {(settings as any)?.metaCapiConfigured
+              ? <><span className="font-medium text-gray-800">Token configured</span> — server-side Purchase events are being sent to Meta.</>
+              : <span className="text-gray-400">Not configured — enter your access token below to enable server-side tracking.</span>}
+          </span>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-xs text-blue-800 space-y-1">
+          <p className="font-semibold">How to get your Access Token</p>
+          <p>Go to <strong>Meta Business Suite → Business Settings → System Users</strong>, create or select a System User, then assign your pixel and generate a token with <code className="bg-blue-100 px-1 rounded">ads_management</code> permission.</p>
+          <p className="text-blue-600 mt-0.5">The token is <strong>write-only</strong> — once saved it will never be shown again.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Meta System User Access Token
+            {(settings as any)?.metaCapiConfigured && (
+              <span className="ml-2 text-xs font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full">● Saved</span>
+            )}
+          </label>
+          <Input
+            type="password"
+            placeholder={(settings as any)?.metaCapiConfigured ? "••••••••••••••• (leave blank to keep existing)" : "EAAxxxxx..."}
+            value={metaCapi.metaAccessToken}
+            onChange={e => setMetaCapi(f => ({ ...f, metaAccessToken: e.target.value }))}
+          />
+          <p className="text-xs text-gray-400 mt-0.5">Stored encrypted server-side. Used to authenticate requests to the Meta Conversions API.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Test Event Code <span className="text-gray-400 font-normal">(optional)</span></label>
+          <Input
+            placeholder="e.g. TEST12345"
+            value={metaCapi.metaTestEventCode}
+            onChange={e => setMetaCapi(f => ({ ...f, metaTestEventCode: e.target.value }))}
+          />
+          <p className="text-xs text-gray-400 mt-0.5">
+            Found in Meta Events Manager → Test Events. Used during development to route CAPI events to the test panel without affecting real data. Remove before going live.
+          </p>
+        </div>
+
+        <SectionSave
+          label="Save Meta CAPI"
+          loading={savingSection === "metaCapi"}
+          onClick={() => saveSection("metaCapi", {
+            ...(metaCapi.metaAccessToken.trim() ? { metaAccessToken: metaCapi.metaAccessToken.trim() } : {}),
+            metaTestEventCode: metaCapi.metaTestEventCode.trim() || null,
           })}
         />
       </div>

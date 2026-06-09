@@ -231,10 +231,25 @@ function parseDateRange(query: any): { since: Date; until: Date } {
   return { since, until: new Date() };
 }
 
+// Helper: build a platform filter clause from ?platform=mobile|web query param.
+// mobile → utm_source = 'mobile_app'
+// web    → utm_source IS NULL OR utm_source != 'mobile_app'
+// all / missing → null (no filter added)
+function platformFilter(platform: unknown) {
+  if (platform === "mobile") return sql`utm_source = 'mobile_app'`;
+  if (platform === "web")    return sql`(utm_source IS NULL OR utm_source != 'mobile_app')`;
+  return undefined;
+}
+
 // ── Tracking funnel summary (admin only) ──
 router.get("/analytics/tracking-funnel", requireAuth, requireRole("owner", "manager"), async (req, res) => {
   const { since, until } = parseDateRange(req.query);
-  const dateFilter = and(gte(trackingEventsTable.createdAt, since), lte(trackingEventsTable.createdAt, until));
+  const platFilter = platformFilter(req.query.platform);
+  const dateFilter = and(
+    gte(trackingEventsTable.createdAt, since),
+    lte(trackingEventsTable.createdAt, until),
+    platFilter,
+  );
 
   const counts = await db
     .select({
@@ -368,6 +383,7 @@ router.get("/analytics/traffic-sources", requireAuth, requireRole("owner", "mana
 // ── Event counts per day over time (admin only) ──
 router.get("/analytics/tracking-timeline", requireAuth, requireRole("owner", "manager"), async (req, res) => {
   const { since, until } = parseDateRange(req.query);
+  const platFilter = platformFilter(req.query.platform);
 
   // Timezone: date_trunc after converting to Asia/Dhaka ensures day boundaries
   // match the local business day (UTC+6), not the DB server's UTC clock.
@@ -378,7 +394,7 @@ router.get("/analytics/tracking-timeline", requireAuth, requireRole("owner", "ma
       count: sql<number>`cast(count(*) as int)`,
     })
     .from(trackingEventsTable)
-    .where(and(gte(trackingEventsTable.createdAt, since), lte(trackingEventsTable.createdAt, until)))
+    .where(and(gte(trackingEventsTable.createdAt, since), lte(trackingEventsTable.createdAt, until), platFilter))
     .groupBy(sql`date_trunc('day', created_at AT TIME ZONE 'Asia/Dhaka')::date`, trackingEventsTable.eventType)
     .orderBy(sql`date_trunc('day', created_at AT TIME ZONE 'Asia/Dhaka')::date`);
 
@@ -395,10 +411,13 @@ router.get("/analytics/tracking-timeline", requireAuth, requireRole("owner", "ma
 
 // ── Active sessions in the last N minutes (admin only) ──
 // Used by the admin dashboard "Live Visitors" widget.
+// Returns total active sessions plus a platform breakdown (web vs mobile)
+// using the utm_source tag set by each client.
 router.get("/analytics/active-sessions", requireAuth, requireRole("owner", "manager"), async (req, res) => {
   // Default window: 30 min. Accept up to 24 hours.
   const minutes = safeDays(req.query.minutes, 30, 1440);
   const since = new Date(Date.now() - minutes * 60 * 1000);
+  const baseFilter = and(gte(trackingEventsTable.createdAt, since), isNotNull(trackingEventsTable.sessionId));
 
   const [result] = await db
     .select({
@@ -406,12 +425,30 @@ router.get("/analytics/active-sessions", requireAuth, requireRole("owner", "mana
       totalEvents:    sql<number>`cast(count(*) as int)`,
     })
     .from(trackingEventsTable)
-    .where(and(gte(trackingEventsTable.createdAt, since), isNotNull(trackingEventsTable.sessionId)));
+    .where(baseFilter);
+
+  // Mobile sessions are tagged utm_source = 'mobile_app' by the Expo tracking lib.
+  const [mobileResult] = await db
+    .select({
+      uniqueSessions: sql<number>`cast(count(distinct session_id) as int)`,
+    })
+    .from(trackingEventsTable)
+    .where(and(baseFilter, sql`utm_source = 'mobile_app'`));
+
+  // Web sessions: all sessions that are NOT mobile_app
+  const [webResult] = await db
+    .select({
+      uniqueSessions: sql<number>`cast(count(distinct session_id) as int)`,
+    })
+    .from(trackingEventsTable)
+    .where(and(baseFilter, sql`(utm_source IS NULL OR utm_source != 'mobile_app')`));
 
   res.json({
-    activeSessions: result?.uniqueSessions ?? 0,
-    totalEvents:    result?.totalEvents ?? 0,
-    windowMinutes:  minutes,
+    activeSessions:        result?.uniqueSessions ?? 0,
+    totalEvents:           result?.totalEvents ?? 0,
+    windowMinutes:         minutes,
+    mobileSessions:        mobileResult?.uniqueSessions ?? 0,
+    webSessions:           webResult?.uniqueSessions ?? 0,
   });
 });
 

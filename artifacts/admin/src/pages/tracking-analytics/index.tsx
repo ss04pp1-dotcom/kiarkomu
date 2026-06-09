@@ -5,11 +5,13 @@ import { useAuth } from "@/lib/auth";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell, Legend,
+  PieChart, Pie,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Eye, ShoppingCart, CreditCard, Package, ArrowRight,
   TrendingUp, Loader2, Globe, Megaphone, Radio, CalendarDays, X, Users,
+  Smartphone, Monitor,
 } from "lucide-react";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -60,6 +62,14 @@ function formatDate(d: string) {
   return parseLocalDate(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+type Platform = "all" | "web" | "mobile";
+
+// Appends &platform=web|mobile when a specific platform is selected.
+function withPlatform(queryString: string, platform: Platform) {
+  if (platform === "all") return queryString;
+  return `${queryString}&platform=${platform}`;
+}
+
 // ── Hooks — accept a pre-built queryString like "days=30" or
 //            "startDate=2026-01-01&endDate=2026-01-31" ─────────────────────────
 function useFunnel(queryString: string, token: string) {
@@ -104,6 +114,14 @@ function useTrafficSources(queryString: string, token: string) {
   });
 }
 
+type ActiveSessionsData = {
+  activeSessions: number;
+  totalEvents: number;
+  windowMinutes: number;
+  mobileSessions: number;
+  webSessions: number;
+};
+
 // Polls every 30 s — shows unique session IDs active in the last 30 minutes.
 function useActiveSessions(token: string) {
   return useQuery({
@@ -113,7 +131,7 @@ function useActiveSessions(token: string) {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed");
-      return res.json() as Promise<{ activeSessions: number; totalEvents: number; windowMinutes: number }>;
+      return res.json() as Promise<ActiveSessionsData>;
     },
     staleTime: 0,
     refetchInterval: 30_000,
@@ -211,6 +229,12 @@ function TrafficTable({
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+const PLATFORM_OPTIONS: { value: Platform; label: string; icon: React.ElementType }[] = [
+  { value: "all",    label: "All Traffic",    icon: Users      },
+  { value: "web",    label: "Web Storefront", icon: Monitor    },
+  { value: "mobile", label: "Mobile App",     icon: Smartphone },
+];
+
 export default function TrackingAnalytics() {
   const { token } = useAuth() as any;
   const authToken = token ?? localStorage.getItem("shohure_admin_token") ?? "";
@@ -219,14 +243,18 @@ export default function TrackingAnalytics() {
   const [customEnd, setCustomEnd] = useState("");
   const [customApplied, setCustomApplied] = useState(false);
   const [sourceTab, setSourceTab] = useState<"source" | "medium" | "campaign">("source");
+  const [platform, setPlatform] = useState<Platform>("all");
 
   const isCustomMode = days === "custom";
   const customValid = isCustomMode && !!customStart && !!customEnd && customStart <= customEnd;
 
-  // queryString sent to all three API endpoints
-  const queryString = (isCustomMode && customApplied && customValid)
+  // Base date queryString — platform is appended separately per-hook
+  const baseQueryString = (isCustomMode && customApplied && customValid)
     ? `startDate=${customStart}&endDate=${customEnd}`
     : `days=${isCustomMode ? "30" : days}`;
+
+  // Platform-aware queryString passed to funnel, timeline, and traffic hooks
+  const queryString = withPlatform(baseQueryString, platform);
 
   // Reset applied state when the user edits the dates
   useEffect(() => { setCustomApplied(false); }, [customStart, customEnd]);
@@ -290,8 +318,31 @@ export default function TrackingAnalytics() {
             Events from your storefront — Views, Add to Cart, Checkout, Purchases &amp; Campaign attribution.
           </p>
         </div>
-        {/* ── Date range filter ── */}
+        {/* ── Date range + platform filters ── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+
+          {/* Platform toggle — All / Web / Mobile */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs bg-white">
+            {PLATFORM_OPTIONS.map(o => {
+              const Icon = o.icon;
+              return (
+                <button
+                  key={o.value}
+                  onClick={() => setPlatform(o.value)}
+                  className={`px-3 py-2 font-medium transition-colors flex items-center gap-1 whitespace-nowrap ${
+                    platform === o.value
+                      ? "bg-indigo-600 text-white"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                  title={o.label}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span className="hidden sm:inline">{o.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs bg-white">
             {DAYS_OPTIONS.map(o => (
               <button
@@ -360,22 +411,72 @@ export default function TrackingAnalytics() {
       </div>
 
       {/* ── Live Visitors banner — auto-refreshes every 30 s ── */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-100 rounded-xl shadow-sm w-fit">
-        <span className="relative flex h-3 w-3">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-white border border-gray-100 rounded-xl shadow-sm">
+        {/* Pulse dot */}
+        <span className="relative flex h-3 w-3 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
         </span>
-        <Users className="w-4 h-4 text-emerald-600" />
+
+        {/* Total count */}
         <div className="flex items-baseline gap-1.5">
+          <Users className="w-4 h-4 text-emerald-600" />
           <span className="text-xl font-bold text-gray-900">
-            {sessionData ? sessionData.activeSessions.toLocaleString() : "—"}
+            {sessionData
+              ? (platform === "mobile"
+                  ? sessionData.mobileSessions
+                  : platform === "web"
+                    ? sessionData.webSessions
+                    : sessionData.activeSessions
+                ).toLocaleString()
+              : "—"}
           </span>
           <span className="text-sm text-gray-500">
-            live visitor{sessionData?.activeSessions !== 1 ? "s" : ""} in the last 30 min
+            live {platform === "mobile" ? "app" : platform === "web" ? "web" : ""} visitor{
+              (platform === "mobile" ? sessionData?.mobileSessions : platform === "web" ? sessionData?.webSessions : sessionData?.activeSessions) !== 1 ? "s" : ""
+            } · last 30 min
           </span>
         </div>
+
+        {/* Web / Mobile split — shown only in "All Traffic" view */}
+        {platform === "all" && sessionData && (sessionData.webSessions > 0 || sessionData.mobileSessions > 0) && (
+          <>
+            <span className="w-px h-5 bg-gray-100 shrink-0" />
+            <div className="flex items-center gap-2 text-xs">
+              <Monitor className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="font-semibold text-gray-700">{sessionData.webSessions.toLocaleString()}</span>
+              <span className="text-gray-400">web</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <Smartphone className="w-3.5 h-3.5 text-purple-400" />
+              <span className="font-semibold text-gray-700">{sessionData.mobileSessions.toLocaleString()}</span>
+              <span className="text-gray-400">app</span>
+            </div>
+
+            {/* Mini pie — web vs mobile proportion */}
+            {(sessionData.webSessions + sessionData.mobileSessions) > 0 && (
+              <div title={`Web ${sessionData.webSessions} · App ${sessionData.mobileSessions}`}>
+                <PieChart width={32} height={32}>
+                  <Pie
+                    data={[
+                      { name: "web",    value: sessionData.webSessions    },
+                      { name: "mobile", value: sessionData.mobileSessions },
+                    ]}
+                    cx={14} cy={14} innerRadius={8} outerRadius={14}
+                    dataKey="value" strokeWidth={0}
+                  >
+                    <Cell fill="#6366f1" />
+                    <Cell fill="#a855f7" />
+                  </Pie>
+                </PieChart>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Total events */}
         {sessionData && sessionData.totalEvents > 0 && (
-          <span className="text-xs text-gray-400 border-l border-gray-100 pl-3">
+          <span className="text-xs text-gray-400 border-l border-gray-100 pl-3 ml-auto">
             {sessionData.totalEvents.toLocaleString()} event{sessionData.totalEvents !== 1 ? "s" : ""}
           </span>
         )}

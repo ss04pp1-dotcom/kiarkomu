@@ -94,6 +94,12 @@ router.get("/settings", requireAuth, requireRole("owner", "manager"), async (_re
     carrybeeClientContext: settings.carrybeeClientContext ?? null,
     carrybeeStoreId: settings.carrybeeStoreId ?? null,
     welcomeCouponCode: settings.welcomeCouponCode ?? null,
+    // Tracking & Retargeting
+    facebookPixelId: settings.facebookPixelId ?? null,
+    googleTagId: settings.googleTagId ?? null,
+    // Meta CAPI — token presence only; never return the token value
+    metaCapiConfigured: !!(settings.metaAccessToken),
+    metaTestEventCode: settings.metaTestEventCode ?? null,
   });
 });
 
@@ -193,6 +199,9 @@ router.patch("/settings", requireAuth, requireRole("owner"), async (req, res) =>
   // Tracking & Retargeting
   if (body.facebookPixelId !== undefined) update.facebookPixelId = body.facebookPixelId?.trim() || null;
   if (body.googleTagId !== undefined) update.googleTagId = body.googleTagId?.trim() || null;
+  // Meta Conversions API
+  if (body.metaAccessToken !== undefined && body.metaAccessToken !== "") update.metaAccessToken = body.metaAccessToken?.trim() || null;
+  if (body.metaTestEventCode !== undefined) update.metaTestEventCode = body.metaTestEventCode?.trim() || null;
 
   if (!Object.keys(update).length) {
     res.status(400).json({ error: "No valid fields provided to update" });

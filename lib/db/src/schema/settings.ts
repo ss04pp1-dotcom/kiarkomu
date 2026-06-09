@@ -71,6 +71,9 @@ export const appSettingsTable = pgTable("app_settings", {
   // Tracking & Retargeting
   facebookPixelId: text("facebook_pixel_id"),
   googleTagId: text("google_tag_id"),
+  // Meta Conversions API (server-side)
+  metaAccessToken: text("meta_access_token"),
+  metaTestEventCode: text("meta_test_event_code"),
 });
 
 export type AppSettings = typeof appSettingsTable.$inferSelect;

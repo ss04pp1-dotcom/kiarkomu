@@ -1,7 +1,6 @@
 {
-  "/page": "app/page.js",
-  "/categories/page": "app/categories/page.js",
-  "/flash-sales/page": "app/flash-sales/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/login/page": "app/login/page.js",
-  "/account/page": "app/account/page.js"
+  "/categories/page": "app/categories/page.js",
+  "/page": "app/page.js"
 }

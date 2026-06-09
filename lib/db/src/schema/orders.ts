@@ -45,6 +45,9 @@ export const ordersTable = pgTable("orders", {
   // Payment breakdown: how much was paid upfront vs. to be collected on delivery
   amountPaid: numeric("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),
   amountDue: numeric("amount_due", { precision: 12, scale: 2 }).notNull().default("0"),
+  // Fraud detection — set to true when the order is flagged by the server-side
+  // fraud checker. Flagged orders are saved but CAPI / courier dispatch is skipped.
+  fraudFlag: boolean("fraud_flag").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => [

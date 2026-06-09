@@ -57,6 +57,13 @@
       "when": 1779669465397,
       "tag": "0007_smtp_google_ios",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780988670506,
+      "tag": "0008_military_garia",
+      "breakpoints": true
     }
   ]
 }

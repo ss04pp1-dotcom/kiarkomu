@@ -12,6 +12,8 @@ import { requireAuth, requireRole, type AuthRequest } from "../middlewares/requi
 import { enqueueJob } from "../lib/job-queue.js";
 import { createCourierOrder, checkDeliveryStatus, type SteadfastStatusResult } from "../lib/steadfast.js";
 import { carrybeeCreateOrder, carrybeeGetOrderDetails, carrybeeGetAddressDetails, carrybeeGetStores } from "../lib/carrybee.js";
+import { checkFraud } from "../lib/fraud-check.js";
+import { fireMetaCapiPurchase } from "../lib/meta-capi.js";
 
 const router = Router();
 
@@ -199,13 +201,14 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
   // We also fetch the district here so the shipping fee calculation is authoritative
   // (never trust the client-sent district value).
   let resolvedDistrict: string | undefined;
+  let fraudCheckPhone: string | null = null;
   if (deliveryMethod === "home_delivery") {
     if (!addressId) {
       res.status(400).json({ error: "addressId is required for home delivery orders" });
       return;
     }
     const [addr] = await db
-      .select({ id: addressesTable.id, district: addressesTable.district })
+      .select({ id: addressesTable.id, district: addressesTable.district, phone: addressesTable.phone })
       .from(addressesTable)
       .where(and(eq(addressesTable.id, addressId), eq(addressesTable.userId, req.userId!)))
       .limit(1);
@@ -214,6 +217,7 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
       return;
     }
     resolvedDistrict = addr.district ?? undefined;
+    fraudCheckPhone = addr.phone ?? null;
   }
 
   let items: { productId: number; variantId?: number | null; productName: string; productThumbnail?: string | null; price: string; quantity: number; variantLabel?: string | null }[] = [];
@@ -346,6 +350,13 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
   const total = Math.max(0, subtotal + shippingFee - discount - coinDiscount);
   const initialPaymentStatus = paymentMethod === "cod" ? "unpaid" : "pending";
 
+  // ── Fraud check — runs before the DB transaction ──────────────────────────
+  // Checks IP rate limiting (>2 orders per IP in 5 min), user rate limiting,
+  // and phone format validation. Flagged orders are still persisted but CAPI
+  // and courier dispatch are suppressed.
+  const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? req.ip ?? null;
+  const fraudResult = checkFraud({ ip: clientIp, userId: req.userId!, phone: fraudCheckPhone });
+
   // Calculate payment breakdown
   let amountPaid: number;
   let amountDue: number;
@@ -429,6 +440,7 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
       payDeliveryCharge: !!payDeliveryCharge,
       amountPaid: amountPaid.toFixed(2),
       amountDue: amountDue.toFixed(2),
+      fraudFlag: fraudResult.isFraud,
     }).returning();
 
     await tx.insert(orderItemsTable).values(items.map(i => ({
@@ -456,9 +468,30 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
     logger.error({ err, orderId: order.id }, "Failed to insert order notification — order still created");
   }
 
-  const [user] = await db.select({ name: usersTable.name, phone: usersTable.phone, pushToken: usersTable.pushToken }).from(usersTable).where(eq(usersTable.id, req.userId!)).limit(1);
+  const [user] = await db.select({ name: usersTable.name, email: usersTable.email, phone: usersTable.phone, pushToken: usersTable.pushToken }).from(usersTable).where(eq(usersTable.id, req.userId!)).limit(1);
   if (user?.pushToken) {
     enqueueJob("push", { token: user.pushToken, title: "Order placed!", body: `Your order #${order.id} has been received.`, data: { orderId: order.id } }).catch((err) => logger.error({ err }, "Push enqueue failed"));
+  }
+
+  // ── Meta Conversions API — fire-and-forget, only for clean orders ──────────
+  if (!fraudResult.isFraud && settings?.facebookPixelId && settings?.metaAccessToken) {
+    fireMetaCapiPurchase({
+      pixelId: settings.facebookPixelId,
+      accessToken: settings.metaAccessToken,
+      testEventCode: settings.metaTestEventCode ?? undefined,
+      orderId: order.id,
+      value: total,
+      currency: settings.currency ?? "BDT",
+      clientIp,
+      clientUserAgent: req.headers["user-agent"] ?? null,
+      userEmail: user?.email ?? null,
+      userPhone: user?.phone ?? fraudCheckPhone ?? null,
+      userName: user?.name ?? null,
+    });
+  }
+
+  if (fraudResult.isFraud) {
+    logger.warn({ orderId: order.id, reason: fraudResult.reason, ip: clientIp }, "Order flagged as fraud — CAPI suppressed");
   }
 
   res.status(201).json(fmtOrder(order, user?.name ?? "Customer"));
