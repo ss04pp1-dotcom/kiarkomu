@@ -6,7 +6,8 @@ import {
 } from "@workspace/db";
 import { eq, and, ilike, sql, inArray, gte, lte, asc, desc } from "drizzle-orm";
 import { requireAuth, requireRole, type AuthRequest } from "../middlewares/requireAuth.js";
-import { ordersTable, orderItemsTable } from "@workspace/db";
+import { ordersTable, orderItemsTable, appSettingsTable } from "@workspace/db";
+import { fireGa4ViewItem } from "../lib/ga4.js";
 
 const router = Router();
 
@@ -238,7 +239,7 @@ router.get("/products/:id", async (req, res) => {
     ]);
 
     const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : null;
-    
+
     res.json({
       ...formatProduct(p, cat[0]?.name, brand[0]?.name, avgRating, reviews.length),
       description: p.description || "",
@@ -247,6 +248,27 @@ router.get("/products/:id", async (req, res) => {
       variants: variants.map(v => ({ ...v, priceModifier: safeFloat(v.priceModifier) })),
       reviews: reviews.map(r => ({ ...r, createdAt: safeDate(r.createdAt) })),
     });
+
+    // ── GA4 view_item — fire-and-forget after response is sent ────────────────
+    db.select({ googleTagId: appSettingsTable.googleTagId, gaApiSecret: appSettingsTable.gaApiSecret })
+      .from(appSettingsTable).limit(1)
+      .then(([s]) => {
+        if (!s?.googleTagId || !s?.gaApiSecret) return;
+        const utmSource = (req.headers["x-utm-source"] as string | undefined) ?? null;
+        // @ts-ignore — req may or may not have userId depending on auth middleware
+        const userId: number | null = (req as any).userId ?? null;
+        fireGa4ViewItem({
+          measurementId: s.googleTagId,
+          apiSecret: s.gaApiSecret,
+          userId,
+          productId: p.id,
+          productName: p.name,
+          price: safeFloat(p.price),
+          categoryName: cat[0]?.name ?? null,
+          utmSource,
+        });
+      })
+      .catch(() => {});
   } catch (err: any) {
     res.status(500).json({ error: "Failed to fetch product details: " + err.message });
   }

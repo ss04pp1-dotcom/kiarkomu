@@ -97,6 +97,8 @@ router.get("/settings", requireAuth, requireRole("owner", "manager"), async (_re
     // Tracking & Retargeting
     facebookPixelId: settings.facebookPixelId ?? null,
     googleTagId: settings.googleTagId ?? null,
+    // GA4 Measurement Protocol — secret presence only; never return the secret value
+    gaConfigured: !!(settings.gaApiSecret),
     // Meta CAPI — token presence only; never return the token value
     metaCapiConfigured: !!(settings.metaAccessToken),
     metaTestEventCode: settings.metaTestEventCode ?? null,
@@ -199,6 +201,8 @@ router.patch("/settings", requireAuth, requireRole("owner"), async (req, res) =>
   // Tracking & Retargeting
   if (body.facebookPixelId !== undefined) update.facebookPixelId = body.facebookPixelId?.trim() || null;
   if (body.googleTagId !== undefined) update.googleTagId = body.googleTagId?.trim() || null;
+  // GA4 Measurement Protocol — write-only (blank = keep existing)
+  if (body.gaApiSecret !== undefined && body.gaApiSecret !== "") update.gaApiSecret = body.gaApiSecret?.trim() || null;
   // Meta Conversions API
   if (body.metaAccessToken !== undefined && body.metaAccessToken !== "") update.metaAccessToken = body.metaAccessToken?.trim() || null;
   if (body.metaTestEventCode !== undefined) update.metaTestEventCode = body.metaTestEventCode?.trim() || null;

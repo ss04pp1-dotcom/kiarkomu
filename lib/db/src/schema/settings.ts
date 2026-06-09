@@ -71,6 +71,8 @@ export const appSettingsTable = pgTable("app_settings", {
   // Tracking & Retargeting
   facebookPixelId: text("facebook_pixel_id"),
   googleTagId: text("google_tag_id"),
+  // GA4 Measurement Protocol (server-side)
+  gaApiSecret: text("ga_api_secret"),
   // Meta Conversions API (server-side)
   metaAccessToken: text("meta_access_token"),
   metaTestEventCode: text("meta_test_event_code"),

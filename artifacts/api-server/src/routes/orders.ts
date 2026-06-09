@@ -14,6 +14,7 @@ import { createCourierOrder, checkDeliveryStatus, type SteadfastStatusResult } f
 import { carrybeeCreateOrder, carrybeeGetOrderDetails, carrybeeGetAddressDetails, carrybeeGetStores } from "../lib/carrybee.js";
 import { checkFraud } from "../lib/fraud-check.js";
 import { fireMetaCapiPurchase } from "../lib/meta-capi.js";
+import { fireGa4Purchase } from "../lib/ga4.js";
 
 const router = Router();
 
@@ -490,6 +491,27 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
       userEmail: user?.email ?? null,
       userPhone: user?.phone ?? fraudCheckPhone ?? null,
       userName: user?.name ?? null,
+    });
+  }
+
+  // ── GA4 Measurement Protocol — fire-and-forget purchase event ───────────────
+  if (!fraudResult.isFraud && settings?.googleTagId && settings?.gaApiSecret) {
+    const utmSource = (req.headers["x-utm-source"] as string | undefined) ?? (req.body.utmSource as string | undefined) ?? null;
+    fireGa4Purchase({
+      measurementId: settings.googleTagId,
+      apiSecret: settings.gaApiSecret,
+      userId: req.userId!,
+      orderId: order.id,
+      value: total,
+      currency: settings.currency ?? "BDT",
+      couponCode: couponCode ?? null,
+      utmSource,
+      items: items.map(i => ({
+        item_id: String(i.productId),
+        item_name: i.productName,
+        price: parseFloat(i.price),
+        quantity: i.quantity,
+      })),
     });
   }
 

@@ -209,7 +209,7 @@ export default function Settings() {
   const [primaryColor, setPrimaryColor] = useState("#E91E63");
   const [colorInput, setColorInput] = useState("#E91E63");
   const [payment, setPayment] = useState({ sslcommerzStoreId: "", sslcommerzStorePassword: "", sslcommerzSandbox: true });
-  const [tracking, setTracking] = useState({ facebookPixelId: "", googleTagId: "" });
+  const [tracking, setTracking] = useState({ facebookPixelId: "", googleTagId: "", gaApiSecret: "" });
   const [metaCapi, setMetaCapi] = useState({ metaAccessToken: "", metaTestEventCode: "" });
 
   type StorageProvider = "local" | "supabase" | "aws_s3";
@@ -347,6 +347,7 @@ export default function Settings() {
     setTracking({
       facebookPixelId: (settings as any).facebookPixelId ?? "",
       googleTagId: (settings as any).googleTagId ?? "",
+      gaApiSecret: "",
     });
     setMetaCapi({
       metaAccessToken: "",
@@ -510,12 +511,30 @@ export default function Settings() {
           />
           <p className="text-xs text-gray-400 mt-0.5">GA4 Measurement ID or Google Ads Conversion ID from Google Tag Manager / Analytics.</p>
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Google Analytics API Secret
+            {(settings as any)?.gaConfigured && (
+              <span className="ml-2 text-xs font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full">● Saved</span>
+            )}
+          </label>
+          <Input
+            type="password"
+            placeholder={(settings as any)?.gaConfigured ? "••••••••••••••• (leave blank to keep existing)" : "Enter your GA4 API Secret"}
+            value={tracking.gaApiSecret}
+            onChange={e => setTracking(f => ({ ...f, gaApiSecret: e.target.value }))}
+          />
+          <p className="text-xs text-gray-400 mt-0.5">
+            Required for server-side GA4 Measurement Protocol (purchase &amp; product view events). Found in GA4 → Admin → Data Streams → your stream → Measurement Protocol API secrets. Stored securely — write-only.
+          </p>
+        </div>
         <SectionSave
           label="Save Tracking IDs"
           loading={savingSection === "tracking"}
           onClick={() => saveSection("tracking", {
             facebookPixelId: tracking.facebookPixelId.trim() || null,
             googleTagId: tracking.googleTagId.trim() || null,
+            ...(tracking.gaApiSecret.trim() ? { gaApiSecret: tracking.gaApiSecret.trim() } : {}),
           })}
         />
       </div>

@@ -1,2 +1,3 @@
 - [Orval mutateAsync data vs body](orval-mutation-data-key.md) — mutateAsync expects `{ data: ... }` not `{ body: ... }`; passing `body` causes undefined body sent to server
 - [API server required env vars](api-server-env-vars.md) — server crashes without CONFIG_ENCRYPTION_KEY, ADMIN_JWT_SECRET, JWT_SECRET; all must be set before startup
+- [GA4 Measurement Protocol pattern](ga4-tracking.md) — fire-and-forget with AbortController timeout; utmSource via x-utm-source header; gaApiSecret is write-only in settings (gaConfigured boolean exposed).
