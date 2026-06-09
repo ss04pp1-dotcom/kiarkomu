@@ -1,0 +1,26 @@
+Please run a comprehensive Bug Hunting, Architecture Audit, and Debugging session across the entire project (Admin Panel, API Server, Database Schema, Web Storefront, and Mobile App).
+
+Identify and fix any hidden layout breaking bugs, API validation flaws, performance bottlenecks, or state management issues.
+
+CRITICAL REQUIREMENT & MANDATORY LOGIN LOGIC:
+1. LOGIN REQUIRED FOR ADD-TO-CART: Users MUST be authenticated (logged in) before they can add any product to their cart. This rule must be strictly enforced on both the Web Storefront (Next.js) and the Mobile App (Flutter).
+2. AUTHENTICATION INTERCEPTION: If an unauthenticated guest user clicks the "Add to Cart" button, immediately intercept the action, block the addition, and redirect them to the login/OTP verification screen or open the login modal.
+3. SECURE DATABASE-ONLY CART: Since authentication is required upfront, remove or bypass any temporary guest localStorage/cookie cart caching. All cart items must be saved directly in the database associated with the authenticated user's profile token.
+4. TRACKING EVENT ENHANCEMENT: Ensure that the Meta Pixel and Conversions API (CAPI) 'AddToCart' event triggers successfully right AFTER the user completes authentication and the item is officially saved to their cart database. The API must not throw 401/403 errors for authenticated cart requests.
+
+Please audit and fix the following areas:
+
+### 1. API Server & Drizzle ORM Database Schema Audit ('api-server/')
+- Enforce strict JWT/Auth token middleware validation on all cart-related routes (POST /cart, PUT /cart, GET /cart).
+- Check manual payment verification workflows to handle edge cases (like empty transaction IDs or double submission).
+- Verify database connections and optimize queries to scale gracefully as traffic increases.
+
+### 2. Admin Panel & Tracking Analytics UI ('artifacts/admin/')
+- Audit the Tracking Analytics page layout to guarantee it never crashes when backend metrics or funnel data are null or empty.
+- Ensure all settings forms (Pixel, CAPI, Brevo SMTP) have clean error boundaries and loading states.
+
+### 3. Web Storefront & Mobile App Synchronization
+- Ensure the communication layer securely passes the authorization headers for every cart modification.
+- Double-check that 'platform: mobile' and 'utmSource: mobile_app' headers/body parameters are consistently sent by the app to keep tracking metrics isolated.
+
+Perform a thorough dry-run, log any vulnerabilities found, and systematically apply the clean, optimized fixes without breaking existing UI styling.

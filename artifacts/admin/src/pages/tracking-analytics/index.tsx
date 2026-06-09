@@ -424,16 +424,16 @@ export default function TrackingAnalytics() {
           <span className="text-xl font-bold text-gray-900">
             {sessionData
               ? (platform === "mobile"
-                  ? sessionData.mobileSessions
+                  ? (sessionData.mobileSessions ?? 0)
                   : platform === "web"
-                    ? sessionData.webSessions
-                    : sessionData.activeSessions
+                    ? (sessionData.webSessions ?? 0)
+                    : (sessionData.activeSessions ?? 0)
                 ).toLocaleString()
               : "—"}
           </span>
           <span className="text-sm text-gray-500">
             live {platform === "mobile" ? "app" : platform === "web" ? "web" : ""} visitor{
-              (platform === "mobile" ? sessionData?.mobileSessions : platform === "web" ? sessionData?.webSessions : sessionData?.activeSessions) !== 1 ? "s" : ""
+              (platform === "mobile" ? (sessionData?.mobileSessions ?? 0) : platform === "web" ? (sessionData?.webSessions ?? 0) : (sessionData?.activeSessions ?? 0)) !== 1 ? "s" : ""
             } · last 30 min
           </span>
         </div>

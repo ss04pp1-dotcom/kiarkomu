@@ -6,6 +6,8 @@ import { type Product, formatPrice, formatDiscount } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
   product: Product;
@@ -16,10 +18,16 @@ export default function ProductCard({ product, className }: ProductCardProps) {
   const [wishlisted, setWishlisted] = useState(false);
   const [added, setAdded] = useState(false);
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const discount = formatDiscount(product.originalPrice, product.price);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      router.push(`/login?returnTo=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     addToCart(product, 1);
     import("@/lib/tracking").then(({ trackAddToCart }) => {
       trackAddToCart({

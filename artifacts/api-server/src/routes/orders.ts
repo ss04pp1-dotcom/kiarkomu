@@ -43,6 +43,7 @@ function fmtOrder(o: any, userName: string) {
     payDeliveryCharge: o.payDeliveryCharge ?? false,
     amountPaid: parseFloat(o.amountPaid ?? "0"),
     amountDue: parseFloat(o.amountDue ?? "0"),
+    fraudFlag: o.fraudFlag ?? false,
   };
 }
 
@@ -147,6 +148,7 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res) => {
   const limitNum = isNaN(_l) || _l  < 1   ? 20  : Math.min(_l, 100);
   const offset = (pageNum - 1) * limitNum;
 
+  const { fraudOnly } = req.query as any;
   const isAdmin = ["owner", "manager"].includes(req.userRole!);
   const conditions: any[] = [];
   const validStatuses = ["pending", "confirmed", "packing", "shipped", "out_for_delivery", "delivered", "cancelled", "returned"];
@@ -154,6 +156,7 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res) => {
   if (status && validStatuses.includes(status)) conditions.push(eq(ordersTable.status, status));
   const parsedUserId = userId ? parseInt(userId) : NaN;
   if (userId && isAdmin && !isNaN(parsedUserId)) conditions.push(eq(ordersTable.userId, parsedUserId));
+  if (fraudOnly === "true" && isAdmin) conditions.push(eq(ordersTable.fraudFlag, true));
 
   const where = conditions.length ? and(...conditions) : undefined;
   const [{ total }] = await db.select({ total: sql<number>`cast(count(*) as int)` }).from(ordersTable).where(where);

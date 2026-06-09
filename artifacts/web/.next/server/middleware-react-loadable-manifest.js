@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{\"components/ProductCard.tsx -> @/lib/tracking\":{\"id\":\"components/ProductCard.tsx -> @/lib/tracking\",\"files\":[\"static/chunks/_app-pages-browser_src_lib_tracking_ts.js\"]}}"
+self.__REACT_LOADABLE_MANIFEST="{}"

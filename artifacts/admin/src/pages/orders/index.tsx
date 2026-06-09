@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Search, X, Package, MapPin, Truck, User, Calendar,
-  ExternalLink, Clock, CheckCircle2, ChevronRight, Plus,
+  ExternalLink, Clock, CheckCircle2, ChevronRight, Plus, ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -320,11 +320,17 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const isFraudTab = statusFilter === "fraud";
+
   const { data: ordersPage, isLoading } = useListOrders({
-    status: statusFilter !== "all" ? statusFilter : undefined,
+    status: (!isFraudTab && statusFilter !== "all") ? statusFilter as any : undefined,
   });
 
-  const displayedOrders = (ordersPage?.orders ?? []).filter((order) => {
+  const allOrders = ordersPage?.orders ?? [];
+
+  const displayedOrders = allOrders.filter((order: any) => {
+    if (isFraudTab && !order.fraudFlag) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -362,6 +368,9 @@ export default function Orders() {
               {s === "all" ? "All Orders" : s.replace(/_/g, " ")}
             </TabsTrigger>
           ))}
+          <TabsTrigger value="fraud" className="rounded-md text-xs sm:text-sm text-red-600 data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center gap-1">
+            <ShieldAlert className="h-3.5 w-3.5" /> Fraud
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -394,7 +403,14 @@ export default function Orders() {
                       onClick={() => setSelectedOrderId(order.id)}
                     >
                       <td className="px-6 py-4 font-mono font-semibold text-gray-700">
-                        #{order.id}
+                        <div className="flex items-center gap-1.5">
+                          #{order.id}
+                          {(order as any).fraudFlag && (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-red-100 text-red-700 px-1.5 py-0.5 rounded" title="Flagged by fraud checker">
+                              <ShieldAlert className="h-3 w-3" /> fraud
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-gray-500">
                         {new Date(order.createdAt).toLocaleDateString("en-GB", {

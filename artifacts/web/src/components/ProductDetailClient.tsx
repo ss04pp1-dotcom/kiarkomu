@@ -279,6 +279,10 @@ export default function ProductDetailClient({ product, related }: Props) {
   };
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      router.push(`/login?returnTo=${encodeURIComponent(`/products/${product.id}`)}`);
+      return;
+    }
     if (hasVariants && !allVariantsSelected) return;
     addItem({
       id: numericProductId,
