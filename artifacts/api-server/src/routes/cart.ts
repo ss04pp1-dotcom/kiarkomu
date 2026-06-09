@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { cartsTable, cartItemsTable, productsTable, productVariantsTable, appSettingsTable } from "@workspace/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth.js";
-import { fireGa4AddToCart } from "../lib/ga4.js";
+import { fireGa4AddToCart, fireGa4RemoveFromCart } from "../lib/ga4.js";
 
 const router = Router();
 
@@ -171,7 +171,43 @@ router.patch("/cart/items/:itemId", requireAuth, async (req: AuthRequest, res) =
   const cart = await getOrCreateCart(req.userId!);
 
   if (qty <= 0) {
+    // Fetch item details before deleting so we can fire remove_from_cart
+    const [removedItem] = await db
+      .select({
+        productId: cartItemsTable.productId,
+        price: cartItemsTable.price,
+        quantity: cartItemsTable.quantity,
+        productName: productsTable.name,
+      })
+      .from(cartItemsTable)
+      .innerJoin(productsTable, eq(productsTable.id, cartItemsTable.productId))
+      .where(and(eq(cartItemsTable.id, itemId), eq(cartItemsTable.cartId, cart.id)))
+      .limit(1);
     await db.delete(cartItemsTable).where(and(eq(cartItemsTable.id, itemId), eq(cartItemsTable.cartId, cart.id)));
+    await touchCart(cart.id);
+    res.json(await getCartResponse(cart.id));
+
+    // ── GA4 remove_from_cart — fire-and-forget after response is sent ────────
+    if (removedItem) {
+      db.select({ googleTagId: appSettingsTable.googleTagId, gaApiSecret: appSettingsTable.gaApiSecret })
+        .from(appSettingsTable).limit(1)
+        .then(([s]) => {
+          if (!s?.googleTagId || !s?.gaApiSecret) return;
+          const utmSource = (req.headers["x-utm-source"] as string | undefined) ?? null;
+          fireGa4RemoveFromCart({
+            measurementId: s.googleTagId,
+            apiSecret: s.gaApiSecret,
+            userId: req.userId!,
+            productId: removedItem.productId,
+            productName: removedItem.productName,
+            price: parseFloat(removedItem.price),
+            quantity: removedItem.quantity,
+            utmSource,
+          });
+        })
+        .catch(() => {});
+    }
+    return;
   } else {
     // Fetch the cart item first so we can validate stock
     const [item] = await db.select()
@@ -213,10 +249,46 @@ router.patch("/cart/items/:itemId", requireAuth, async (req: AuthRequest, res) =
 });
 
 router.delete("/cart/items/:itemId", requireAuth, async (req: AuthRequest, res) => {
+  const itemId = parseInt(req.params.itemId as string);
   const cart = await getOrCreateCart(req.userId!);
-  await db.delete(cartItemsTable).where(and(eq(cartItemsTable.id, parseInt(req.params.itemId as string)), eq(cartItemsTable.cartId, cart.id)));
+
+  // Fetch item details before deleting so we can fire remove_from_cart
+  const [removedItem] = await db
+    .select({
+      productId: cartItemsTable.productId,
+      price: cartItemsTable.price,
+      quantity: cartItemsTable.quantity,
+      productName: productsTable.name,
+    })
+    .from(cartItemsTable)
+    .innerJoin(productsTable, eq(productsTable.id, cartItemsTable.productId))
+    .where(and(eq(cartItemsTable.id, itemId), eq(cartItemsTable.cartId, cart.id)))
+    .limit(1);
+
+  await db.delete(cartItemsTable).where(and(eq(cartItemsTable.id, itemId), eq(cartItemsTable.cartId, cart.id)));
   await touchCart(cart.id);
   res.json(await getCartResponse(cart.id));
+
+  // ── GA4 remove_from_cart — fire-and-forget after response is sent ──────────
+  if (removedItem) {
+    db.select({ googleTagId: appSettingsTable.googleTagId, gaApiSecret: appSettingsTable.gaApiSecret })
+      .from(appSettingsTable).limit(1)
+      .then(([s]) => {
+        if (!s?.googleTagId || !s?.gaApiSecret) return;
+        const utmSource = (req.headers["x-utm-source"] as string | undefined) ?? null;
+        fireGa4RemoveFromCart({
+          measurementId: s.googleTagId,
+          apiSecret: s.gaApiSecret,
+          userId: req.userId!,
+          productId: removedItem.productId,
+          productName: removedItem.productName,
+          price: parseFloat(removedItem.price),
+          quantity: removedItem.quantity,
+          utmSource,
+        });
+      })
+      .catch(() => {});
+  }
 });
 
 export default router;

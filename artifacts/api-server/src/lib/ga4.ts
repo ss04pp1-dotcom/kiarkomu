@@ -141,7 +141,7 @@ export function fireGa4ViewItem(p: Ga4ViewItemParams): void {
   });
 }
 
-export interface Ga4AddToCartParams {
+export interface Ga4CartItemParams {
   measurementId: string;
   apiSecret: string;
   userId: number;
@@ -153,12 +153,32 @@ export interface Ga4AddToCartParams {
   utmSource?: string | null;
 }
 
-export function fireGa4AddToCart(p: Ga4AddToCartParams): void {
+export function fireGa4AddToCart(p: Ga4CartItemParams): void {
   fireGa4Event({
     measurementId: p.measurementId,
     apiSecret: p.apiSecret,
     clientId: deriveClientId(p.userId),
     eventName: "add_to_cart",
+    utmSource: p.utmSource,
+    params: {
+      currency: p.currency ?? "BDT",
+      value: parseFloat((p.price * p.quantity).toFixed(2)),
+      items: [{
+        item_id: String(p.productId),
+        item_name: p.productName,
+        price: parseFloat(p.price.toFixed(2)),
+        quantity: p.quantity,
+      }],
+    },
+  });
+}
+
+export function fireGa4RemoveFromCart(p: Ga4CartItemParams): void {
+  fireGa4Event({
+    measurementId: p.measurementId,
+    apiSecret: p.apiSecret,
+    clientId: deriveClientId(p.userId),
+    eventName: "remove_from_cart",
     utmSource: p.utmSource,
     params: {
       currency: p.currency ?? "BDT",
