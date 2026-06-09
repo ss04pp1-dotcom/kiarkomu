@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { cartsTable, cartItemsTable, productsTable, productVariantsTable } from "@workspace/db";
+import { cartsTable, cartItemsTable, productsTable, productVariantsTable, appSettingsTable } from "@workspace/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth.js";
+import { fireGa4AddToCart } from "../lib/ga4.js";
 
 const router = Router();
 
@@ -138,6 +139,25 @@ router.post("/cart/items", requireAuth, async (req: AuthRequest, res) => {
   }
   await touchCart(cart.id);
   res.json(await getCartResponse(cart.id));
+
+  // ── GA4 add_to_cart — fire-and-forget after response is sent ─────────────
+  db.select({ googleTagId: appSettingsTable.googleTagId, gaApiSecret: appSettingsTable.gaApiSecret })
+    .from(appSettingsTable).limit(1)
+    .then(([s]) => {
+      if (!s?.googleTagId || !s?.gaApiSecret) return;
+      const utmSource = (req.headers["x-utm-source"] as string | undefined) ?? null;
+      fireGa4AddToCart({
+        measurementId: s.googleTagId,
+        apiSecret: s.gaApiSecret,
+        userId: req.userId!,
+        productId,
+        productName: product.name,
+        price: itemPrice,
+        quantity: qty,
+        utmSource,
+      });
+    })
+    .catch(() => {});
 });
 
 router.patch("/cart/items/:itemId", requireAuth, async (req: AuthRequest, res) => {

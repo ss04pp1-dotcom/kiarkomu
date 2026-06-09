@@ -140,3 +140,62 @@ export function fireGa4ViewItem(p: Ga4ViewItemParams): void {
     },
   });
 }
+
+export interface Ga4AddToCartParams {
+  measurementId: string;
+  apiSecret: string;
+  userId: number;
+  productId: number | string;
+  productName: string;
+  price: number;
+  quantity: number;
+  currency?: string;
+  utmSource?: string | null;
+}
+
+export function fireGa4AddToCart(p: Ga4AddToCartParams): void {
+  fireGa4Event({
+    measurementId: p.measurementId,
+    apiSecret: p.apiSecret,
+    clientId: deriveClientId(p.userId),
+    eventName: "add_to_cart",
+    utmSource: p.utmSource,
+    params: {
+      currency: p.currency ?? "BDT",
+      value: parseFloat((p.price * p.quantity).toFixed(2)),
+      items: [{
+        item_id: String(p.productId),
+        item_name: p.productName,
+        price: parseFloat(p.price.toFixed(2)),
+        quantity: p.quantity,
+      }],
+    },
+  });
+}
+
+export interface Ga4BeginCheckoutParams {
+  measurementId: string;
+  apiSecret: string;
+  userId: number;
+  value: number;
+  currency?: string;
+  items?: Array<{ item_id: string; item_name: string; price: number; quantity: number }>;
+  couponCode?: string | null;
+  utmSource?: string | null;
+}
+
+export function fireGa4BeginCheckout(p: Ga4BeginCheckoutParams): void {
+  fireGa4Event({
+    measurementId: p.measurementId,
+    apiSecret: p.apiSecret,
+    clientId: deriveClientId(p.userId),
+    eventName: "begin_checkout",
+    utmSource: p.utmSource,
+    params: {
+      currency: p.currency ?? "BDT",
+      value: parseFloat(p.value.toFixed(2)),
+      coupon: p.couponCode ?? undefined,
+      items: p.items ?? [],
+    },
+  });
+}

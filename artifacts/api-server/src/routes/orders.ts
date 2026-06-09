@@ -14,7 +14,7 @@ import { createCourierOrder, checkDeliveryStatus, type SteadfastStatusResult } f
 import { carrybeeCreateOrder, carrybeeGetOrderDetails, carrybeeGetAddressDetails, carrybeeGetStores } from "../lib/carrybee.js";
 import { checkFraud } from "../lib/fraud-check.js";
 import { fireMetaCapiPurchase } from "../lib/meta-capi.js";
-import { fireGa4Purchase } from "../lib/ga4.js";
+import { fireGa4Purchase, fireGa4BeginCheckout } from "../lib/ga4.js";
 
 const router = Router();
 
@@ -316,6 +316,26 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
   const [settings] = await db.select().from(appSettingsTable).limit(1);
   // ── Use freeDeliveryThreshold + enableFreeDelivery from app_settings ──
   if (settings && settings.enableFreeDelivery && subtotal >= parseFloat(settings.freeDeliveryThreshold)) shippingFee = 0;
+
+  // ── GA4 begin_checkout — fire-and-forget, uses already-fetched settings ───
+  if (settings?.googleTagId && settings?.gaApiSecret) {
+    const utmSource = (req.headers["x-utm-source"] as string | undefined) ?? (req.body.utmSource as string | undefined) ?? null;
+    fireGa4BeginCheckout({
+      measurementId: settings.googleTagId,
+      apiSecret: settings.gaApiSecret,
+      userId: req.userId!,
+      value: subtotal,
+      currency: settings.currency ?? "BDT",
+      couponCode: couponCode ?? null,
+      utmSource,
+      items: items.map(i => ({
+        item_id: String(i.productId),
+        item_name: i.productName,
+        price: parseFloat(i.price),
+        quantity: i.quantity,
+      })),
+    });
+  }
 
   // ── Pre-validate coupon (read-only checks) before entering the transaction ──
   let validatedCoupon: typeof couponsTable.$inferSelect | null = null;
