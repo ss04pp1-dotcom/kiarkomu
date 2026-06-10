@@ -5,8 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ChevronRight, Package, Truck, Home, MapPin, CheckCircle,
-  Loader2, ExternalLink, Clock, ArrowLeft, CreditCard,
+  Loader2, ExternalLink, Clock, ArrowLeft, CreditCard, Download,
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/config";
 import {
   useGetOrder, useGetOrderTracking,
   getGetOrderQueryKey, getGetOrderTrackingQueryKey,
@@ -280,6 +281,14 @@ export default function OrderDetailPage() {
           <Link href={`/order-tracking?id=${order.id}`} className="text-xs px-4 py-2 border border-[#F0185A] text-[#F0185A] rounded-lg hover:bg-pink-50 transition-colors">
             Track Order
           </Link>
+          <a
+            href={`${API_BASE_URL}/api/orders/${order.id}/invoice`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Download className="w-3 h-3" /> Download Invoice
+          </a>
         </div>
       </div>
     </div>

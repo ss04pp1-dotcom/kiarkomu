@@ -1,6 +1,7 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { logger } from "../lib/logger.js";
+import { sendOrderConfirmationEmail } from "../lib/mailer.js";
 import { db } from "@workspace/db";
 import {
   ordersTable, orderItemsTable, orderTrackingTable, cartItemsTable, cartsTable,
@@ -512,6 +513,25 @@ router.post("/orders", requireAuth, orderCreateLimiter, async (req: AuthRequest,
       userPhone: user?.phone ?? fraudCheckPhone ?? null,
       userName: user?.name ?? null,
     });
+  }
+
+  // ── Order confirmation email — fire-and-forget ─────────────────────────────
+  if (user?.email) {
+    const siteName = (settings as any)?.siteName ?? "Shohure";
+    sendOrderConfirmationEmail({
+      toEmail: user.email,
+      siteName,
+      customerName: user.name ?? "Customer",
+      orderId: order.id,
+      items: items.map(i => ({ productName: i.productName, variantLabel: i.variantLabel ?? null, quantity: i.quantity, price: parseFloat(i.price) })),
+      subtotal,
+      shippingFee,
+      discount,
+      coinsUsed: coinsActuallyUsed,
+      total,
+      paymentMethod,
+      deliveryAddress: resolvedDistrict ?? null,
+    }).catch(err => logger.warn({ err, orderId: order.id }, "Order confirmation email failed — order still created"));
   }
 
   // ── GA4 Measurement Protocol — fire-and-forget purchase event ───────────────

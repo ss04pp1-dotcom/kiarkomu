@@ -181,6 +181,57 @@ export async function sendContactEmail({ to, siteName, name, email, phone, subje
   await sendBrevoRestEmail(config, to, `[Contact] ${subject} — from ${name}`, html);
 }
 
+export async function sendOrderConfirmationEmail({
+  toEmail, siteName, customerName, orderId, items, subtotal, shippingFee, discount, coinsUsed, total, paymentMethod, deliveryAddress,
+}: {
+  toEmail: string; siteName: string; customerName: string; orderId: number;
+  items: { productName: string; variantLabel?: string | null; quantity: number; price: number }[];
+  subtotal: number; shippingFee: number; discount: number; coinsUsed: number; total: number;
+  paymentMethod: string; deliveryAddress?: string | null;
+}) {
+  const config = await getEmailConfig();
+  const PAYMENT_LABELS: Record<string, string> = {
+    cod: "Cash on Delivery", bkash: "bKash", nagad: "Nagad",
+    rocket: "Rocket", card: "Card / Bank",
+  };
+  const payLabel = PAYMENT_LABELS[paymentMethod] ?? paymentMethod;
+  const itemsHtml = items.map(i => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;font-size:14px;color:#374151">${i.productName}${i.variantLabel ? ` <span style="color:#9CA3AF;font-size:12px">(${i.variantLabel})</span>` : ""}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;font-size:14px;color:#374151;text-align:center">×${i.quantity}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #F3F4F6;font-size:14px;color:#374151;text-align:right">৳${(i.price * i.quantity).toLocaleString("en-BD")}</td>
+    </tr>
+  `).join("");
+  const html = `
+    <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px;border:1px solid #eee;">
+      <h2 style="color:#F0185A;margin:0 0 4px">${siteName}</h2>
+      <p style="color:#555;font-size:14px;margin:0 0 24px">Order Confirmation</p>
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px 20px;margin:0 0 24px">
+        <p style="color:#166534;font-size:15px;font-weight:600;margin:0 0 4px">&#10003; Order #${orderId} confirmed!</p>
+        <p style="color:#374151;font-size:13px;margin:0">Hi ${customerName}, thank you for your purchase. We'll notify you when it ships.</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+        <thead><tr style="background:#F9FAFB"><th style="padding:10px 12px;text-align:left;font-size:13px;color:#6B7280;font-weight:600">Product</th><th style="padding:10px 12px;font-size:13px;color:#6B7280;font-weight:600">Qty</th><th style="padding:10px 12px;text-align:right;font-size:13px;color:#6B7280;font-weight:600">Price</th></tr></thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+      <div style="background:#F9FAFB;border-radius:8px;padding:16px 20px;font-size:14px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6B7280">Subtotal</span><span>৳${subtotal.toLocaleString("en-BD")}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6B7280">Shipping</span><span>৳${shippingFee.toLocaleString("en-BD")}</span></div>
+        ${discount > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#059669">Discount</span><span style="color:#059669">-৳${discount.toLocaleString("en-BD")}</span></div>` : ""}
+        ${coinsUsed > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#D97706">Coins</span><span style="color:#D97706">-৳${coinsUsed.toLocaleString("en-BD")}</span></div>` : ""}
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16px;padding-top:10px;border-top:2px solid #E5E7EB;margin-top:6px"><span>Total</span><span style="color:#F0185A">৳${total.toLocaleString("en-BD")}</span></div>
+      </div>
+      <div style="font-size:13px;color:#6B7280;margin-bottom:20px">
+        <strong style="color:#374151">Payment:</strong> ${payLabel}<br/>
+        ${deliveryAddress ? `<strong style="color:#374151">Delivery to:</strong> ${deliveryAddress}` : "<strong style='color:#374151'>Delivery:</strong> Store Pickup"}
+      </div>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+      <p style="color:#bbb;font-size:12px;margin:0">&copy; ${new Date().getFullYear()} ${siteName}. All rights reserved.</p>
+    </div>
+  `;
+  await sendBrevoRestEmail(config, toEmail, `Order #${orderId} confirmed — ${siteName}`, html);
+}
+
 export async function sendVerificationEmail(toEmail: string, code: string, siteName?: string) {
   const config = await getEmailConfig();
   const name = siteName ?? config.fromName;
