@@ -652,6 +652,40 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={styles.container}>
+      {/* ── Fixed Product Header ── */}
+      <View style={[styles.productHeader, { paddingTop: insets.top }]}>
+        <View style={styles.productHeaderRow}>
+          <Pressable style={styles.headerIconBtn} onPress={() => router.back()} testID="btn-back">
+            <Feather name="arrow-left" size={20} color="#fff" />
+          </Pressable>
+          <Pressable style={styles.productSearchBar} onPress={() => router.push("/search" as any)}>
+            <Feather name="search" size={15} color="#9E9E9E" style={{ marginLeft: 12 }} />
+            <Text style={styles.productSearchPlaceholder} numberOfLines={1}>
+              Search products, brands...
+            </Text>
+          </Pressable>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Pressable
+              style={[styles.headerIconBtn, isWishlisted && { backgroundColor: "rgba(233,30,99,0.85)" }]}
+              onPress={toggleWishlist}
+              testID="btn-wishlist"
+            >
+              <Feather name="heart" size={18} color="#fff" />
+            </Pressable>
+            <Pressable style={styles.headerIconBtn} onPress={handleShare} testID="btn-share" accessibilityLabel="Share product">
+              <Feather name="share-2" size={16} color="#fff" />
+            </Pressable>
+            <Pressable
+              style={styles.headerIconBtn}
+              onPress={() => router.push("/(tabs)/cart" as any)}
+              testID="btn-cart-header"
+            >
+              <Feather name="shopping-cart" size={18} color="#fff" />
+            </Pressable>
+          </View>
+        </View>
+      </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 110 }}
@@ -682,36 +716,6 @@ export default function ProductDetailScreen() {
               </View>
             )}
           </ScrollView>
-
-          {/* Floating buttons */}
-          <View style={[styles.imgTopOverlay, { paddingTop: topPad + 8 }]}>
-            <Pressable
-              style={styles.iconBtn}
-              onPress={() => router.back()}
-              testID="btn-back"
-            >
-              <Feather name="arrow-left" size={20} color="#fff" />
-            </Pressable>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Pressable
-                style={[styles.iconBtn, isWishlisted && { backgroundColor: "rgba(233,30,99,0.85)" }]}
-                onPress={toggleWishlist}
-                testID="btn-wishlist"
-              >
-                <Feather name="heart" size={18} color="#fff" />
-              </Pressable>
-              <Pressable style={styles.iconBtn} onPress={handleShare} testID="btn-share" accessibilityLabel="Share product">
-                <Feather name="share-2" size={18} color="#fff" />
-              </Pressable>
-              <Pressable
-                style={styles.iconBtn}
-                onPress={() => router.push("/(tabs)/cart" as any)}
-                testID="btn-cart-header"
-              >
-                <Feather name="shopping-cart" size={18} color="#fff" />
-              </Pressable>
-            </View>
-          </View>
 
           {/* Dot indicators */}
           {images.length > 1 && (
@@ -1320,6 +1324,48 @@ export default function ProductDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
+
+  productHeader: {
+    backgroundColor: BLUE,
+    paddingBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  productHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    gap: 8,
+  },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  productSearchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    height: 40,
+    borderWidth: 1.5,
+    borderColor: "#E0E0E0",
+  },
+  productSearchPlaceholder: {
+    flex: 1,
+    fontSize: 13,
+    color: "#9E9E9E",
+    fontFamily: "Inter_400Regular",
+    paddingRight: 12,
+  },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
