@@ -76,7 +76,7 @@ async function runMigrations() {
     "0005_steadfast_courier",
     "0006_courier_status_poll",
     "0007_smtp_google_ios",
-    "0008_web_announcement",
+    "0010_web_announcement",
   ]) {
     try {
       const sqlPath = path.join(migrationsFolder, `${tag}.sql`);

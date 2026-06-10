@@ -158,6 +158,29 @@ export async function sendPasswordResetEmail(toEmail: string, code: string, site
   await sendBrevoRestEmail(config, toEmail, subject, html);
 }
 
+export async function sendContactEmail({ to, siteName, name, email, phone, subject, message }: {
+  to: string; siteName: string; name: string; email: string; phone: string; subject: string; message: string;
+}) {
+  const config = await getEmailConfig();
+  const html = `
+    <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px;border:1px solid #eee;">
+      <h2 style="color:#F0185A;margin:0 0 4px">${siteName}</h2>
+      <p style="color:#555;font-size:14px;margin:0 0 24px">New contact form submission</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px">
+        <tr><td style="padding:8px 12px;background:#F9FAFB;font-weight:600;color:#374151;width:110px;border-radius:6px 0 0 6px">Name</td><td style="padding:8px 12px;color:#111827">${name}</td></tr>
+        <tr><td style="padding:8px 12px;font-weight:600;color:#374151">Email</td><td style="padding:8px 12px"><a href="mailto:${email}" style="color:#F0185A">${email}</a></td></tr>
+        ${phone ? `<tr><td style="padding:8px 12px;background:#F9FAFB;font-weight:600;color:#374151">Phone</td><td style="padding:8px 12px;color:#111827">${phone}</td></tr>` : ""}
+        <tr><td style="padding:8px 12px;font-weight:600;color:#374151">Subject</td><td style="padding:8px 12px;color:#111827">${subject}</td></tr>
+      </table>
+      <div style="background:#F9FAFB;border-radius:8px;padding:16px;font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap">${message}</div>
+      <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">Reply directly to this email to respond to ${name}.</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:16px 0"/>
+      <p style="color:#bbb;font-size:12px;margin:0">&copy; ${new Date().getFullYear()} ${siteName}</p>
+    </div>
+  `;
+  await sendBrevoRestEmail(config, to, `[Contact] ${subject} — from ${name}`, html);
+}
+
 export async function sendVerificationEmail(toEmail: string, code: string, siteName?: string) {
   const config = await getEmailConfig();
   const name = siteName ?? config.fromName;

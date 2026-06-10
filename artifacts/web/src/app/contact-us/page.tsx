@@ -1,7 +1,11 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MapPin, Phone, Mail, Clock } from "lucide-react";
+import { ChevronRight, MapPin, Phone, Mail, Clock, Loader2, CheckCircle } from "lucide-react";
 import { usePublicConfig } from "@/lib/usePublicConfig";
+import { API_BASE_URL } from "@/lib/config";
+
+const SUBJECTS = ["Order Issue", "Return / Refund", "Payment Problem", "Product Inquiry", "Other"];
 
 export default function ContactPage() {
   const { data: config } = usePublicConfig();
@@ -15,6 +19,41 @@ export default function ContactPage() {
     { icon: Mail, label: "Email", lines: [email] },
     { icon: Clock, label: "Support Hours", lines: ["Sat–Thu: 9AM–8PM", "Fri: 2PM–8PM"] },
   ];
+
+  const [form, setForm] = useState({ name: "", email: "", phone: "", subject: SUBJECTS[0], message: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    setError("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      setError("Please fill in your name, email and message.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send message.");
+      setSuccess(true);
+      setForm({ name: "", email: "", phone: "", subject: SUBJECTS[0], message: "" });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -32,43 +71,93 @@ export default function ContactPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-5">Send Message</h2>
-          <form className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Your Name</label>
-                <input type="text" placeholder="John Doe" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A]" />
+
+          {success ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+              <CheckCircle className="w-14 h-14 text-green-500" />
+              <h3 className="text-xl font-bold text-gray-900">Message Sent!</h3>
+              <p className="text-gray-500 text-sm max-w-xs">
+                Thank you for reaching out. Our support team will get back to you within 24 hours.
+              </p>
+              <button
+                onClick={() => setSuccess(false)}
+                className="mt-2 px-6 py-2.5 bg-[#F0185A] text-white font-semibold rounded-xl text-sm hover:bg-[#c8124a] transition-colors"
+              >
+                Send Another Message
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Your Name *</label>
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    type="text"
+                    placeholder="John Doe"
+                    required
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email Address *</label>
+                  <input
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    type="email"
+                    placeholder="john@example.com"
+                    required
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A] transition-colors"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email Address</label>
-                <input type="email" placeholder="john@example.com" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A]" />
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Phone Number</label>
+                <input
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  type="tel"
+                  placeholder="+880 1X XXXX XXXX"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A] transition-colors"
+                />
               </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Phone Number</label>
-              <input type="tel" placeholder="+880 1X XXXX XXXX" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A]" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Subject</label>
-              <select className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A] bg-white">
-                <option>Order Issue</option>
-                <option>Return / Refund</option>
-                <option>Payment Problem</option>
-                <option>Product Inquiry</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Message</label>
-              <textarea
-                rows={5}
-                placeholder="Tell us how we can help you..."
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A] resize-none"
-              />
-            </div>
-            <button type="submit" className="w-full py-3 bg-[#F0185A] hover:bg-[#c8124a] text-white font-semibold rounded-xl transition-colors">
-              Send Message
-            </button>
-          </form>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Subject</label>
+                <select
+                  name="subject"
+                  value={form.subject}
+                  onChange={handleChange}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A] transition-colors bg-white"
+                >
+                  {SUBJECTS.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Message *</label>
+                <textarea
+                  name="message"
+                  value={form.message}
+                  onChange={handleChange}
+                  rows={5}
+                  required
+                  placeholder="Tell us how we can help you..."
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#F0185A] resize-none transition-colors"
+                />
+              </div>
+              {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 bg-[#F0185A] hover:bg-[#c8124a] disabled:bg-pink-300 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : "Send Message"}
+              </button>
+            </form>
+          )}
         </div>
 
         <div className="space-y-4">

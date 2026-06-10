@@ -67,7 +67,7 @@ export interface AppConfigSafe {
 }
 
 const CACHE_KEY = "shohure_app_config";
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 1 * 60 * 1000;
 const CACHE_TIMESTAMP_KEY = "shohure_app_config_ts";
 
 const DEFAULTS: AppConfigSafe = {

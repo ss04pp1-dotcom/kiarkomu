@@ -160,7 +160,7 @@ export default function ProductDetailClient({ product, related }: Props) {
 
   useEffect(() => {
     if (!numericProductId || isNaN(numericProductId)) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://shohure-api.onrender.com"}/api/products/${numericProductId}/variants`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : "")}/api/products/${numericProductId}/variants`)
       .then(r => r.ok ? r.json() : [])
       .then(data => { if (Array.isArray(data)) setVariants(data); })
       .catch(() => {});

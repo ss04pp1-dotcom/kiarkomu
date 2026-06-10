@@ -19,6 +19,7 @@ import wishlistRouter from "./wishlist.js";
 import seedRouter from "./seed.js";
 import appConfigRouter from "./app-config.js";
 import scheduledNotificationsRouter from "./scheduled-notifications.js";
+import contactRouter from "./contact.js";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(wishlistRouter);
 router.use(seedRouter);
 router.use(appConfigRouter);
 router.use(scheduledNotificationsRouter);
+router.use(contactRouter);
 
 export default router;
