@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Save, Settings as SettingsIcon, Palette, RefreshCw,
   Loader2, MessageCircle, CreditCard, Sliders, Upload, X, Truck, Mail, KeyRound, FileText,
-  HardDrive, Database, Plus, Trash2, Lock, Globe, ToggleRight, BarChart2,
+  HardDrive, Database, Plus, Trash2, Lock, Globe, ToggleRight, BarChart2, MapPin,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -195,6 +195,8 @@ export default function Settings() {
   const [smtp, setSmtp] = useState({ smtpEmail: "", smtpPassword: "", smtpHost: "", smtpPort: "", smtpSecure: false });
   const [google, setGoogle] = useState({ googleClientId: "", googleClientSecret: "", googleAndroidClientId: "", googleIosClientId: "" });
   const [general, setGeneral] = useState({ siteName: "", enableFreeDelivery: true, freeDeliveryThreshold: "", coinValue: "", welcomeCouponCode: "" });
+  const [contactInfo, setContactInfo] = useState({ supportAddress: "", supportEmail: "", supportPhone: "" });
+  const [socialLinks, setSocialLinks] = useState({ socialFacebook: "", socialInstagram: "", socialTwitter: "", socialYoutube: "" });
   const [whatsapp, setWhatsapp] = useState({ whatsappNumber: "" });
   const [legal, setLegal] = useState({ privacyPolicyUrl: "", termsOfServiceUrl: "" });
   const [notificationRetentionDays, setNotificationRetentionDays] = useState(7);
@@ -315,6 +317,17 @@ export default function Settings() {
       freeDeliveryThreshold: String(settings.freeDeliveryThreshold ?? 500),
       coinValue: String(settings.coinValue ?? 0.10),
       welcomeCouponCode: (settings as any).welcomeCouponCode ?? "",
+    });
+    setContactInfo({
+      supportAddress: (settings as any).supportAddress ?? "",
+      supportEmail: (settings as any).supportEmail ?? "",
+      supportPhone: (settings as any).supportPhone ?? "",
+    });
+    setSocialLinks({
+      socialFacebook: (settings as any).socialFacebook ?? "",
+      socialInstagram: (settings as any).socialInstagram ?? "",
+      socialTwitter: (settings as any).socialTwitter ?? "",
+      socialYoutube: (settings as any).socialYoutube ?? "",
     });
     setWhatsapp({ whatsappNumber: settings.whatsappNumber ?? "" });
     setLegal({
@@ -437,6 +450,105 @@ export default function Settings() {
             freeDeliveryThreshold: parseFloat(general.freeDeliveryThreshold) || 0,
             coinValue: parseFloat(general.coinValue) || 0,
             welcomeCouponCode: general.welcomeCouponCode.trim() || null,
+          })}
+        />
+      </div>
+
+      {/* ── Contact & Social Media ── */}
+      <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <MapPin className="h-5 w-5 text-rose-500" />
+          <h3 className="text-base font-semibold text-gray-800">Contact Information</h3>
+        </div>
+        <p className="text-sm text-gray-500 -mt-1">
+          This information is displayed in the website footer and Contact Us page.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Office Address</label>
+          <Input
+            placeholder="e.g. 123 Gulshan Avenue, Dhaka-1212"
+            value={contactInfo.supportAddress}
+            onChange={e => setContactInfo(f => ({ ...f, supportAddress: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Support Email</label>
+          <Input
+            type="email"
+            placeholder="e.g. support@shohure.com.bd"
+            value={contactInfo.supportEmail}
+            onChange={e => setContactInfo(f => ({ ...f, supportEmail: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Support Phone</label>
+          <Input
+            type="tel"
+            placeholder="e.g. 16167"
+            value={contactInfo.supportPhone}
+            onChange={e => setContactInfo(f => ({ ...f, supportPhone: e.target.value }))}
+          />
+        </div>
+        <SectionSave
+          label="Save Contact Info"
+          loading={savingSection === "contactInfo"}
+          onClick={() => saveSection("contactInfo", {
+            supportAddress: contactInfo.supportAddress.trim() || null,
+            supportEmail: contactInfo.supportEmail.trim() || null,
+            supportPhone: contactInfo.supportPhone.trim() || null,
+          })}
+        />
+      </div>
+
+      {/* ── Social Media Links ── */}
+      <div className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Globe className="h-5 w-5 text-blue-500" />
+          <h3 className="text-base font-semibold text-gray-800">Social Media Links</h3>
+        </div>
+        <p className="text-sm text-gray-500 -mt-1">
+          Full URLs for your social media pages. Shown as icons in the website footer.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
+          <Input
+            placeholder="https://facebook.com/yourpage"
+            value={socialLinks.socialFacebook}
+            onChange={e => setSocialLinks(f => ({ ...f, socialFacebook: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+          <Input
+            placeholder="https://instagram.com/yourhandle"
+            value={socialLinks.socialInstagram}
+            onChange={e => setSocialLinks(f => ({ ...f, socialInstagram: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Twitter / X</label>
+          <Input
+            placeholder="https://twitter.com/yourhandle"
+            value={socialLinks.socialTwitter}
+            onChange={e => setSocialLinks(f => ({ ...f, socialTwitter: e.target.value }))}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">YouTube</label>
+          <Input
+            placeholder="https://youtube.com/@yourchannel"
+            value={socialLinks.socialYoutube}
+            onChange={e => setSocialLinks(f => ({ ...f, socialYoutube: e.target.value }))}
+          />
+        </div>
+        <SectionSave
+          label="Save Social Links"
+          loading={savingSection === "socialLinks"}
+          onClick={() => saveSection("socialLinks", {
+            socialFacebook: socialLinks.socialFacebook.trim() || null,
+            socialInstagram: socialLinks.socialInstagram.trim() || null,
+            socialTwitter: socialLinks.socialTwitter.trim() || null,
+            socialYoutube: socialLinks.socialYoutube.trim() || null,
           })}
         />
       </div>

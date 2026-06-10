@@ -6,6 +6,13 @@ import { usePublicConfig } from "@/lib/usePublicConfig";
 export default function Footer() {
   const { data: appSettings } = usePublicConfig();
   const siteName = appSettings?.siteName || "Shohure";
+  const address = appSettings?.supportAddress || "123 Gulshan Avenue, Dhaka-1212";
+  const phone = appSettings?.supportPhone || "16167 (Customer Support)";
+  const email = appSettings?.supportEmail || "support@shohure.com.bd";
+  const facebook = appSettings?.socialFacebook;
+  const twitter = appSettings?.socialTwitter;
+  const instagram = appSettings?.socialInstagram;
+  const youtube = appSettings?.socialYoutube;
 
   return (
     <footer className="bg-gray-900 text-gray-300 mt-12">
@@ -24,15 +31,15 @@ export default function Footer() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[#F0185A] flex-shrink-0" />
-                <span>123 Gulshan Avenue, Dhaka-1212</span>
+                <span>{address}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#F0185A] flex-shrink-0" />
-                <span>16167 (Customer Support)</span>
+                <span>{phone}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#F0185A] flex-shrink-0" />
-                <span>support@shohure.com.bd</span>
+                <span>{email}</span>
               </div>
             </div>
           </div>
@@ -92,17 +99,41 @@ export default function Footer() {
             <div>
               <h5 className="text-white text-sm font-medium mb-3 md:text-right">Follow Us</h5>
               <div className="flex gap-3">
-                {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
-                  <Link key={i} href="#" className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#F0185A] transition-colors">
-                    <Icon className="w-4 h-4" />
+                {facebook && (
+                  <Link href={facebook} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#F0185A] transition-colors">
+                    <Facebook className="w-4 h-4" />
                   </Link>
-                ))}
+                )}
+                {twitter && (
+                  <Link href={twitter} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#F0185A] transition-colors">
+                    <Twitter className="w-4 h-4" />
+                  </Link>
+                )}
+                {instagram && (
+                  <Link href={instagram} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#F0185A] transition-colors">
+                    <Instagram className="w-4 h-4" />
+                  </Link>
+                )}
+                {youtube && (
+                  <Link href={youtube} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#F0185A] transition-colors">
+                    <Youtube className="w-4 h-4" />
+                  </Link>
+                )}
+                {!facebook && !twitter && !instagram && !youtube && (
+                  <span className="text-xs text-gray-500 italic">Set social links in Admin → Settings</span>
+                )}
               </div>
             </div>
           </div>
 
           <div className="mt-6 text-center text-xs text-gray-500">
-            © 2025 {siteName}. All rights reserved. | Privacy Policy | Terms of Service
+            © {new Date().getFullYear()} {siteName}. All rights reserved.
+            {appSettings?.privacyPolicyUrl && (
+              <> | <Link href={appSettings.privacyPolicyUrl} className="hover:text-gray-300 transition-colors">Privacy Policy</Link></>
+            )}
+            {appSettings?.termsOfServiceUrl && (
+              <> | <Link href={appSettings.termsOfServiceUrl} className="hover:text-gray-300 transition-colors">Terms of Service</Link></>
+            )}
           </div>
         </div>
       </div>

@@ -47,6 +47,16 @@ router.get("/config", async (_req, res) => {
     // Web announcement ticker
     webAnnouncementText: settings?.webAnnouncementText ?? null,
     webAnnouncementActive: settings?.webAnnouncementActive ?? true,
+    webAnnouncementSpeed: settings?.webAnnouncementSpeed ?? 60,
+    // Contact & support info
+    supportAddress: settings?.supportAddress ?? null,
+    supportEmail: settings?.supportEmail ?? null,
+    supportPhone: settings?.supportPhone ?? null,
+    // Social media links
+    socialFacebook: settings?.socialFacebook ?? null,
+    socialInstagram: settings?.socialInstagram ?? null,
+    socialTwitter: settings?.socialTwitter ?? null,
+    socialYoutube: settings?.socialYoutube ?? null,
   });
 });
 
@@ -102,6 +112,17 @@ router.get("/settings", requireAuth, requireRole("owner", "manager"), async (_re
     // Meta CAPI — token presence only; never return the token value
     metaCapiConfigured: !!(settings.metaAccessToken),
     metaTestEventCode: settings.metaTestEventCode ?? null,
+    // Web announcement ticker
+    webAnnouncementSpeed: settings.webAnnouncementSpeed ?? 60,
+    // Contact & support info
+    supportAddress: settings.supportAddress ?? null,
+    supportEmail: settings.supportEmail ?? null,
+    supportPhone: settings.supportPhone ?? null,
+    // Social media links
+    socialFacebook: settings.socialFacebook ?? null,
+    socialInstagram: settings.socialInstagram ?? null,
+    socialTwitter: settings.socialTwitter ?? null,
+    socialYoutube: settings.socialYoutube ?? null,
   });
 });
 
@@ -195,9 +216,22 @@ router.patch("/settings", requireAuth, requireRole("owner"), async (req, res) =>
   if (body.carrybeeClientContext !== undefined) update.carrybeeClientContext = body.carrybeeClientContext || null;
   if (body.carrybeeStoreId !== undefined) update.carrybeeStoreId = body.carrybeeStoreId || null;
   if (body.welcomeCouponCode !== undefined) update.welcomeCouponCode = body.welcomeCouponCode?.trim() || null;
+  // Contact & support info
+  if (body.supportAddress !== undefined) update.supportAddress = body.supportAddress?.trim() || null;
+  if (body.supportEmail !== undefined) update.supportEmail = body.supportEmail?.trim() || null;
+  if (body.supportPhone !== undefined) update.supportPhone = body.supportPhone?.trim() || null;
+  // Social media links
+  if (body.socialFacebook !== undefined) update.socialFacebook = body.socialFacebook?.trim() || null;
+  if (body.socialInstagram !== undefined) update.socialInstagram = body.socialInstagram?.trim() || null;
+  if (body.socialTwitter !== undefined) update.socialTwitter = body.socialTwitter?.trim() || null;
+  if (body.socialYoutube !== undefined) update.socialYoutube = body.socialYoutube?.trim() || null;
   // Web announcement ticker
   if (body.webAnnouncementText !== undefined) update.webAnnouncementText = body.webAnnouncementText?.trim() || null;
   if (body.webAnnouncementActive !== undefined) update.webAnnouncementActive = !!body.webAnnouncementActive;
+  if (body.webAnnouncementSpeed !== undefined) {
+    const spd = parseInt(body.webAnnouncementSpeed, 10);
+    if (!isNaN(spd) && spd >= 5 && spd <= 300) update.webAnnouncementSpeed = spd;
+  }
   // Tracking & Retargeting
   if (body.facebookPixelId !== undefined) update.facebookPixelId = body.facebookPixelId?.trim() || null;
   if (body.googleTagId !== undefined) update.googleTagId = body.googleTagId?.trim() || null;

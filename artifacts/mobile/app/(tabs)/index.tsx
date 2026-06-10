@@ -29,6 +29,7 @@ import React, {
 import {
   Animated,
   Dimensions,
+  Easing,
   FlatList,
   Image,
   Platform,
@@ -187,6 +188,72 @@ const noticeS = StyleSheet.create({
   icon: { fontSize: 16 },
   label: { fontSize: 9, fontFamily: "Inter_700Bold", color: "#B45309", letterSpacing: 1.2, marginBottom: 2 },
   msg: { fontSize: 13, fontFamily: "Inter_500Medium", color: "#92400E", lineHeight: 18 },
+});
+
+const mTickerS = StyleSheet.create({
+  outer: { marginHorizontal: 12, marginTop: 8, borderRadius: 10, backgroundColor: "#F0185A", overflow: "hidden" },
+  row: { flexDirection: "row", alignItems: "center" },
+  badge: { paddingHorizontal: 10, paddingVertical: 9, borderRightWidth: 1, borderRightColor: "rgba(255,255,255,0.35)", flexShrink: 0 },
+  badgeText: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#fff", letterSpacing: 0.5 },
+  clip: { flex: 1, overflow: "hidden", height: 36, justifyContent: "center" },
+  text: { fontSize: 13, color: "#fff", fontFamily: "Inter_500Medium", paddingLeft: 10 },
+});
+
+const MobileAnnouncementTicker = memo(function MobileAnnouncementTicker({ text, speed }: { text: string; speed: number }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const halfWidthRef = useRef(0);
+  const loopRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  const segment = `${text}   •   `;
+  const fullText = segment.repeat(4);
+
+  const startLoop = useCallback((halfW: number) => {
+    loopRef.current?.stop();
+    anim.setValue(0);
+    loopRef.current = Animated.loop(
+      Animated.timing(anim, {
+        toValue: -halfW,
+        duration: Math.max(speed, 5) * 1000,
+        useNativeDriver: true,
+        easing: Easing.linear,
+      })
+    );
+    loopRef.current.start();
+  }, [anim, speed]);
+
+  useEffect(() => {
+    if (halfWidthRef.current > 0) startLoop(halfWidthRef.current);
+    return () => loopRef.current?.stop();
+  }, [speed, startLoop]);
+
+  return (
+    <View style={mTickerS.outer}>
+      <View style={mTickerS.row}>
+        <View style={mTickerS.badge}>
+          <Text style={mTickerS.badgeText}>📢 NOTICE</Text>
+        </View>
+        <View style={mTickerS.clip}>
+          <View style={{ position: "absolute", opacity: 0, top: 0, left: 0 }} pointerEvents="none">
+            <Text
+              style={mTickerS.text}
+              onLayout={e => {
+                const w = e.nativeEvent.layout.width;
+                if (w > 0 && halfWidthRef.current === 0) {
+                  halfWidthRef.current = w / 2;
+                  startLoop(w / 2);
+                }
+              }}
+            >
+              {fullText}
+            </Text>
+          </View>
+          <Animated.Text style={[mTickerS.text, { transform: [{ translateX: anim }] }]} numberOfLines={1}>
+            {fullText}
+          </Animated.Text>
+        </View>
+      </View>
+    </View>
+  );
 });
 
 const PRODUCT_CARD_W = Math.floor((SCREEN_W - 40) / 2);
@@ -562,6 +629,13 @@ export default function HomeScreen() {
               ))}
             </ScrollView>
           )}
+
+          {appConfig.webAnnouncementActive !== false && appConfig.webAnnouncementText ? (
+            <MobileAnnouncementTicker
+              text={appConfig.webAnnouncementText}
+              speed={appConfig.webAnnouncementSpeed ?? 60}
+            />
+          ) : null}
 
           {notice?.message ? (
             <View style={noticeS.wrap}>

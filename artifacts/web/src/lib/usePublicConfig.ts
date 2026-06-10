@@ -36,8 +36,18 @@ export interface PublicConfig {
   rocketTxnLabel?: string | null;
   webAnnouncementText?: string | null;
   webAnnouncementActive?: boolean;
+  webAnnouncementSpeed?: number;
   facebookPixelId?: string | null;
   googleTagId?: string | null;
+  // Contact & support info
+  supportAddress?: string | null;
+  supportEmail?: string | null;
+  supportPhone?: string | null;
+  // Social media links
+  socialFacebook?: string | null;
+  socialInstagram?: string | null;
+  socialTwitter?: string | null;
+  socialYoutube?: string | null;
 }
 
 export function usePublicConfig() {

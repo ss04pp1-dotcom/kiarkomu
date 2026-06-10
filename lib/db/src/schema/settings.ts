@@ -65,9 +65,19 @@ export const appSettingsTable = pgTable("app_settings", {
   termsOfServiceUrl: text("terms_of_service_url"),
   // Welcome coupon shown in new-user notifications
   welcomeCouponCode: text("welcome_coupon_code"),
+  // Contact & support info
+  supportAddress: text("support_address"),
+  supportEmail: text("support_email"),
+  supportPhone: text("support_phone"),
+  // Social media links
+  socialFacebook: text("social_facebook"),
+  socialInstagram: text("social_instagram"),
+  socialTwitter: text("social_twitter"),
+  socialYoutube: text("social_youtube"),
   // Web storefront announcement ticker
   webAnnouncementText: text("web_announcement_text"),
   webAnnouncementActive: boolean("web_announcement_active").notNull().default(true),
+  webAnnouncementSpeed: integer("web_announcement_speed").notNull().default(60),
   // Tracking & Retargeting
   facebookPixelId: text("facebook_pixel_id"),
   googleTagId: text("google_tag_id"),

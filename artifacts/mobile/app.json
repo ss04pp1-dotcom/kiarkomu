@@ -16,7 +16,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.shohure.mobile"
+      "bundleIdentifier": "com.shohure.mobile",
+      "associatedDomains": [
+        "applinks:shohure.com.bd",
+        "applinks:api.shohure.com.bd"
+      ]
     },
     "android": {
       "package": "com.shohure.mobile",
@@ -24,7 +28,26 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#E91E63"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "shohure.com.bd",
+              "pathPrefix": "/product"
+            },
+            {
+              "scheme": "https",
+              "host": "api.shohure.com.bd",
+              "pathPrefix": "/product"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png",

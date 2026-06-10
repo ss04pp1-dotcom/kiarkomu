@@ -65,7 +65,10 @@ body {
   display: inline-flex;
   white-space: nowrap;
   will-change: transform;
-  animation: ticker-scroll 100s linear infinite;
+  animation-name: ticker-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /* animationDuration is set via inline style for dynamic speed */
 }
 
 .ticker-track:hover {

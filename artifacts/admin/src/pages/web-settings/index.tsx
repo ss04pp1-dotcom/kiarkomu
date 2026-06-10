@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useGetSettings, useUpdateSettings, getGetSettingsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Globe, Megaphone, Save, ToggleLeft, ToggleRight } from "lucide-react";
+import { Globe, Megaphone, Save, ToggleLeft, ToggleRight, Gauge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function WebSettings() {
@@ -13,12 +13,14 @@ export default function WebSettings() {
 
   const [announcementText, setAnnouncementText] = useState("");
   const [announcementActive, setAnnouncementActive] = useState(true);
+  const [announcementSpeed, setAnnouncementSpeed] = useState(60);
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (settings) {
       setAnnouncementText((settings as any).webAnnouncementText ?? "");
       setAnnouncementActive((settings as any).webAnnouncementActive !== false);
+      setAnnouncementSpeed((settings as any).webAnnouncementSpeed ?? 60);
     }
   }, [settings]);
 
@@ -28,6 +30,7 @@ export default function WebSettings() {
         data: {
           webAnnouncementText: announcementText.trim() || null,
           webAnnouncementActive: announcementActive,
+          webAnnouncementSpeed: announcementSpeed,
         } as any,
       });
       queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
@@ -45,6 +48,8 @@ export default function WebSettings() {
       </div>
     );
   }
+
+  const speedLabel = announcementSpeed <= 20 ? "Very Fast" : announcementSpeed <= 40 ? "Fast" : announcementSpeed <= 80 ? "Normal" : announcementSpeed <= 140 ? "Slow" : "Very Slow";
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -93,6 +98,35 @@ export default function WebSettings() {
           />
           <p className="text-xs text-gray-400 mt-1.5">
             Leave blank to hide the ticker entirely. The text will scroll continuously across the homepage.
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Gauge className="w-4 h-4 text-gray-500" />
+            <label className="text-sm font-semibold text-gray-700">
+              Scroll Speed
+            </label>
+            <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+              {speedLabel}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={5}
+            max={300}
+            step={5}
+            value={announcementSpeed}
+            onChange={e => { setAnnouncementSpeed(Number(e.target.value)); setDirty(true); }}
+            className="w-full accent-blue-600"
+          />
+          <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <span>Fast (5s)</span>
+            <span className="font-medium text-gray-600">{announcementSpeed}s per cycle</span>
+            <span>Slow (300s)</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5">
+            Lower value = faster scroll. Default is 60 seconds per full cycle.
           </p>
         </div>
 

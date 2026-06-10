@@ -41,6 +41,22 @@ export interface AppConfigSafe {
   privacyPolicyUrl?: string | null;
   termsOfServiceUrl?: string | null;
 
+  // Web announcement ticker (used for the app ticker as well)
+  webAnnouncementText?: string | null;
+  webAnnouncementActive?: boolean;
+  webAnnouncementSpeed?: number;
+
+  // Contact & support info
+  supportAddress?: string | null;
+  supportEmail?: string | null;
+  supportPhone?: string | null;
+
+  // Social media links
+  socialFacebook?: string | null;
+  socialInstagram?: string | null;
+  socialTwitter?: string | null;
+  socialYoutube?: string | null;
+
   // Display labels
   bkashNumberLabel?: string;
   nagadNumberLabel?: string;

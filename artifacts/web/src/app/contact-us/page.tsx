@@ -1,7 +1,21 @@
+"use client";
 import Link from "next/link";
 import { ChevronRight, MapPin, Phone, Mail, Clock } from "lucide-react";
+import { usePublicConfig } from "@/lib/usePublicConfig";
 
 export default function ContactPage() {
+  const { data: config } = usePublicConfig();
+  const address = config?.supportAddress || "123 Gulshan Avenue, Dhaka-1212, Bangladesh";
+  const phone = config?.supportPhone || "16167 (Customer Support)";
+  const email = config?.supportEmail || "support@shohure.com.bd";
+
+  const contactItems = [
+    { icon: MapPin, label: "Address", lines: [address] },
+    { icon: Phone, label: "Phone", lines: [phone] },
+    { icon: Mail, label: "Email", lines: [email] },
+    { icon: Clock, label: "Support Hours", lines: ["Sat–Thu: 9AM–8PM", "Fri: 2PM–8PM"] },
+  ];
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
@@ -61,12 +75,7 @@ export default function ContactPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
             <h3 className="font-bold text-gray-900 mb-4">Contact Info</h3>
             <div className="space-y-4">
-              {[
-                { icon: MapPin, label: "Address", value: "123 Gulshan Avenue\nDhaka-1212, Bangladesh" },
-                { icon: Phone, label: "Phone", value: "16167 (Customer Support)\n+880 1712 345678" },
-                { icon: Mail, label: "Email", value: "support@shohure.com.bd\ninfo@shohure.com.bd" },
-                { icon: Clock, label: "Support Hours", value: "Sat–Thu: 9AM–8PM\nFri: 2PM–8PM" },
-              ].map((info, i) => {
+              {contactItems.map((info, i) => {
                 const Icon = info.icon;
                 return (
                   <div key={i} className="flex gap-3">
@@ -75,7 +84,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-500 mb-0.5">{info.label}</p>
-                      {info.value.split("\n").map((line, j) => (
+                      {info.lines.map((line, j) => (
                         <p key={j} className="text-sm text-gray-700">{line}</p>
                       ))}
                     </div>

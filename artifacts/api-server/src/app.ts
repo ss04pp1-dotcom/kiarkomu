@@ -78,6 +78,31 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use("/api/uploads", express.static(path.join(__dirname, "../public/uploads")));
 
+app.get("/.well-known/assetlinks.json", (_req, res) => {
+  const fingerprint = process.env["ANDROID_CERT_FINGERPRINT"] ?? "";
+  res.json([{
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "android_app",
+      package_name: "com.shohure.mobile",
+      sha256_cert_fingerprints: fingerprint ? [fingerprint] : [],
+    },
+  }]);
+});
+
+app.get("/.well-known/apple-app-site-association", (_req, res) => {
+  const teamId = process.env["APPLE_TEAM_ID"] ?? "TEAMID";
+  res.type("application/json").json({
+    applinks: {
+      apps: [],
+      details: [{
+        appID: `${teamId}.com.shohure.mobile`,
+        paths: ["/product/*", "/"],
+      }],
+    },
+  });
+});
+
 app.use("/api", router);
 
 // Global error handler — catches any unhandled errors thrown by route handlers.
